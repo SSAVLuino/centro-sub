@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import SociClient from "./SociClient"
 
+export const dynamic = 'force-dynamic'
+
 export default async function SociPage() {
   const supabase = createClient()
 

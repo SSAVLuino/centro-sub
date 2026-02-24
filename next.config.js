@@ -9,6 +9,11 @@ const nextConfig = {
       },
     ],
   },
+  // Forza il rendering dinamico per tutte le pagine
+  // evita che Next.js tenti di prerenderizzare pagine che usano Supabase
+  experimental: {
+    serverComponentsExternalPackages: ["@supabase/ssr"],
+  },
 }
 
 module.exports = nextConfig

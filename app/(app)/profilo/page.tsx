@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import ProfiloClient from "./ProfiloClient"
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProfiloPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
