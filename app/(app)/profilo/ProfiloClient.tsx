@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { User, Mail, Phone, CreditCard, MapPin, Shield, Anchor, Wind, Award, Calendar, Briefcase, CheckCircle, XCircle, KeyRound, Loader2, Camera, Pencil, FileText, Upload, Trash2, ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
