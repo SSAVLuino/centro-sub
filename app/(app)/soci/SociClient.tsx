@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Plus, CheckCircle, XCircle, Shield, Anchor, Wind, Pencil } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -151,28 +151,33 @@ export default function SociClient({ soci, brevetti, tipiSocio }: {
 }
 
 function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
-  mode: "add" | "edit"; socio?: Socio
-  brevetti: Brevetto[]; tipiSocio: TipoSocio[]
+  mode: "add" | "edit"; socio?: Socio; brevetti: Brevetto[]; tipiSocio: TipoSocio[];
   onClose: () => void; onSaved: () => void
 }) {
-  const supabase = createClient()
+  const [form, setForm] = useState(emptyForm)
   const [tab, setTab] = useState<"anagrafica" | "sub" | "note">("anagrafica")
+  const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const [form, setForm] = useState(() => {
+  useEffect(() => {
     if (mode === "edit" && socio) {
-      return {
-        Nome: socio.Nome ?? "", Cognome: socio.Cognome ?? "",
-        email: socio.email ?? "", Telefono: socio.Telefono ?? "",
+      // Carica TUTTI i campi dal database
+      setForm({
+        Nome: socio.Nome ?? "",
+        Cognome: socio.Cognome ?? "",
+        email: socio.email ?? "",
+        Telefono: socio.Telefono ?? "",
         "Data di Nascita": socio["Data di Nascita"] ?? "",
         "Luogo di nascita": socio["Luogo di nascita"] ?? "",
-        Indirizzo: socio.Indirizzo ?? "", CAP: socio.CAP?.toString() ?? "",
-        Comune: socio.Comune ?? "", Provincia: socio.Provincia ?? "",
-        Nazione: socio.Nazione ?? "Italia", CF: socio.CF ?? "",
+        Indirizzo: socio.Indirizzo ?? "",
+        CAP: socio.CAP ?? "",
+        Comune: socio.Comune ?? "",
+        Provincia: socio.Provincia ?? "",
+        Nazione: socio.Nazione ?? "Italia",
+        CF: socio.CF ?? "",
         Professione: socio.Professione ?? "",
-        Brevetto: socio.Brevetto?.toString() ?? "",
-        "Tipo Socio New": socio["Tipo Socio New"]?.toString() ?? "",
+        Brevetto: socio.Brevetto ?? "",
+        "Tipo Socio New": socio["Tipo Socio New"] ?? "",
         Specializzazione: socio.Specializzazione ?? "",
         "Tipo Assicurazione": socio["Tipo Assicurazione"] ?? "",
         "Nota FIN": socio["Nota FIN"] ?? "",
@@ -182,34 +187,50 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
         Assicurazione: socio.Assicurazione ?? false,
         FIN: socio.FIN ?? false,
         "Patente Nautica": socio["Patente Nautica"] ?? false,
-      }
+      })
+    } else {
+      setForm(emptyForm)
     }
-    return { ...emptyForm }
-  })
+    setError("")
+    setTab("anagrafica")
+  }, [mode, socio])
 
-  function set(key: string, value: any) { setForm(f => ({ ...f, [key]: value })) }
+  const set = (key: keyof typeof form, value: any) => {
+    setForm(f => ({ ...f, [key]: value }))
+  }
 
-  async function handleSave() {
-    if (!form.Nome || !form.Cognome) { setError("Nome e Cognome sono obbligatori."); return }
-    setSaving(true); setError(null)
-    const payload: any = {
-      Nome: form.Nome, Cognome: form.Cognome,
-      email: form.email || null, Telefono: form.Telefono || null,
-      "Data di Nascita": form["Data di Nascita"] || null,
-      "Luogo di nascita": form["Luogo di nascita"] || null,
-      Indirizzo: form.Indirizzo || null,
-      CAP: form.CAP ? Number(form.CAP) : null,
-      Comune: form.Comune || null, Provincia: form.Provincia || null,
-      Nazione: form.Nazione || null, CF: form.CF || null,
-      Professione: form.Professione || null,
-      Brevetto: form.Brevetto ? Number(form.Brevetto) : null,
-      "Tipo Socio New": form["Tipo Socio New"] ? Number(form["Tipo Socio New"]) : 1,
-      Specializzazione: form.Specializzazione || null,
-      "Tipo Assicurazione": form["Tipo Assicurazione"] || null,
-      "Nota FIN": form["Nota FIN"] || null,
-      "Nota Patente": form["Nota Patente"] || null,
-      Attivo: form.Attivo, "Addetto Ricarica": form["Addetto Ricarica"],
-      Assicurazione: form.Assicurazione, FIN: form.FIN,
+  const supabase = createClient()
+
+  const handleSave = async () => {
+    if (!form.Nome?.trim() || !form.Cognome?.trim()) {
+      setError("Nome e Cognome sono obbligatori")
+      return
+    }
+    setSaving(true)
+    const payload = {
+      Nome: form.Nome,
+      Cognome: form.Cognome,
+      email: form.email,
+      Telefono: form.Telefono,
+      "Data di Nascita": form["Data di Nascita"],
+      "Luogo di nascita": form["Luogo di nascita"],
+      Indirizzo: form.Indirizzo,
+      CAP: form.CAP,
+      Comune: form.Comune,
+      Provincia: form.Provincia,
+      Nazione: form.Nazione,
+      CF: form.CF,
+      Professione: form.Professione,
+      Brevetto: form.Brevetto,
+      "Tipo Socio New": form["Tipo Socio New"],
+      Specializzazione: form.Specializzazione,
+      "Tipo Assicurazione": form["Tipo Assicurazione"],
+      "Nota FIN": form["Nota FIN"],
+      "Nota Patente": form["Nota Patente"],
+      Attivo: form.Attivo,
+      "Addetto Ricarica": form["Addetto Ricarica"],
+      Assicurazione: form.Assicurazione,
+      FIN: form.FIN,
       "Patente Nautica": form["Patente Nautica"],
     }
     const { error } = mode === "add"
@@ -226,8 +247,8 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
   ]
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col mt-4 mb-4 max-h-[calc(100vh-32px)]">
         <div className="p-6 border-b border-border shrink-0">
           <h2 className="text-xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
             {mode === "add" ? "Nuovo Socio" : `Modifica — ${socio?.Nome} ${socio?.Cognome}`}
