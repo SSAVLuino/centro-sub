@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Waves, LayoutDashboard, Users, Wind, LogOut, Menu, X, User } from "lucide-react"
+import { Waves, LayoutDashboard, Users, Wind, LogOut, Menu, X, User, FileText } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { clsx } from "clsx"
 
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/soci", label: "Soci", icon: Users },
   { href: "/compressore", label: "Compressore", icon: Wind },
+  { href: "/certificati", label: "Certificati", icon: FileText },
   { href: "/profilo", label: "Profilo", icon: User },
 ]
 
