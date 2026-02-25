@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { User, Mail, Phone, CreditCard, MapPin, Shield, Anchor, Wind, Award, Calendar, Briefcase, CheckCircle, XCircle, KeyRound, Loader2, Camera } from "lucide-react"
+import { User, Mail, Phone, CreditCard, MapPin, Shield, Anchor, Wind, Award, Calendar, Briefcase, CheckCircle, XCircle, KeyRound, Loader2, Camera, Pencil } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
@@ -22,6 +22,7 @@ export default function ProfiloClient({
   ricaricheCount: number
 }) {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
     socio?.Avatar ? `${AVATAR_BASE_URL}${socio.Avatar}` : null
   )
@@ -143,6 +144,12 @@ export default function ProfiloClient({
 
             {/* Azioni */}
             <div className="flex gap-2 mt-2">
+              {socio && (
+                <button onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-xl hover:bg-secondary transition-all font-medium">
+                  <Pencil className="w-3.5 h-3.5" /> Modifica dati
+                </button>
+              )}
               <button onClick={() => setShowPasswordModal(true)}
                 className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-xl hover:bg-secondary transition-all font-medium">
                 <KeyRound className="w-3.5 h-3.5" /> Cambia password
@@ -176,7 +183,7 @@ export default function ProfiloClient({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Stato" value={socio.Attivo ? "Attivo" : "Inattivo"}
             icon={socio.Attivo ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <XCircle className="w-4 h-4 text-red-500" />}
-            color={socio.Attivo ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"} />
+            color={socio.Attivo ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"} />
           <StatCard label="Brevetto" value={socio.UT_Brevetti?.Nome ?? "—"}
             icon={<Award className="w-4 h-4 text-blue-500" />}
             color="bg-blue-50 text-blue-700" />
@@ -248,6 +255,10 @@ export default function ProfiloClient({
       {showPasswordModal && (
         <PasswordModal onClose={() => setShowPasswordModal(false)} />
       )}
+
+      {showEditModal && socio && (
+        <EditProfiloModal socio={socio} onClose={() => setShowEditModal(false)} onSaved={() => { setShowEditModal(false); router.refresh() }} />
+      )}
     </div>
   )
 }
@@ -312,8 +323,8 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl mt-4 mb-4">
         <div className="p-6 border-b border-border">
           <h2 className="text-lg font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>Cambia password</h2>
         </div>
@@ -354,6 +365,154 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: () => void; onSaved: () => void }) {
+  const supabase = createClient()
+  const [form, setForm] = useState({
+    Nome: socio.Nome ?? "",
+    Cognome: socio.Cognome ?? "",
+    email: socio.email ?? "",
+    Telefono: socio.Telefono ?? "",
+    "Data di Nascita": socio["Data di Nascita"] ?? "",
+    "Luogo di nascita": socio["Luogo di nascita"] ?? "",
+    Indirizzo: socio.Indirizzo ?? "",
+    CAP: socio.CAP ?? "",
+    Comune: socio.Comune ?? "",
+    Provincia: socio.Provincia ?? "",
+    Nazione: socio.Nazione ?? "Italia",
+    CF: socio.CF ?? "",
+    Professione: socio.Professione ?? "",
+    Specializzazione: socio.Specializzazione ?? "",
+    "Tipo Assicurazione": socio["Tipo Assicurazione"] ?? "",
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const set = (key: string, value: any) => {
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  async function handleSave() {
+    if (!form.Nome?.trim() || !form.Cognome?.trim()) {
+      setError("Nome e Cognome sono obbligatori")
+      return
+    }
+    setSaving(true)
+    setError(null)
+
+    const payload = {
+      Nome: form.Nome,
+      Cognome: form.Cognome,
+      Telefono: form.Telefono,
+      "Data di Nascita": form["Data di Nascita"],
+      "Luogo di nascita": form["Luogo di nascita"],
+      Indirizzo: form.Indirizzo,
+      CAP: form.CAP,
+      Comune: form.Comune,
+      Provincia: form.Provincia,
+      Nazione: form.Nazione,
+      CF: form.CF,
+      Professione: form.Professione,
+      Specializzazione: form.Specializzazione,
+      "Tipo Assicurazione": form["Tipo Assicurazione"],
+    }
+
+    const { error } = await supabase
+      .from("BP_soci")
+      .update(payload)
+      .eq("id", socio.id)
+
+    if (error) {
+      setError(error.message)
+      setSaving(false)
+    } else {
+      onSaved()
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col mt-4 mb-4">
+        <div className="p-6 border-b border-border shrink-0">
+          <h2 className="text-xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
+            Modifica i tuoi dati
+          </h2>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+          {/* Anagrafica */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Dati Anagrafici</h3>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Nome *" value={form.Nome} onChange={v => set("Nome", v)} />
+                <Field label="Cognome *" value={form.Cognome} onChange={v => set("Cognome", v)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Email" value={form.email} onChange={v => set("email", v)} type="email" disabled />
+                <Field label="Telefono" value={form.Telefono} onChange={v => set("Telefono", v)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Data di Nascita" value={form["Data di Nascita"]} onChange={v => set("Data di Nascita", v)} type="date" />
+                <Field label="Luogo di Nascita" value={form["Luogo di nascita"]} onChange={v => set("Luogo di nascita", v)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Codice Fiscale" value={form.CF} onChange={v => set("CF", v)} />
+                <Field label="Professione" value={form.Professione} onChange={v => set("Professione", v)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Residenza */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Residenza</h3>
+            <div className="space-y-3">
+              <Field label="Indirizzo" value={form.Indirizzo} onChange={v => set("Indirizzo", v)} />
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="CAP" value={form.CAP} onChange={v => set("CAP", v)} />
+                <Field label="Comune" value={form.Comune} onChange={v => set("Comune", v)} />
+                <Field label="Provincia" value={form.Provincia} onChange={v => set("Provincia", v)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Nazione" value={form.Nazione} onChange={v => set("Nazione", v)} />
+                <Field label="Specializzazione" value={form.Specializzazione} onChange={v => set("Specializzazione", v)} />
+              </div>
+              <Field label="Tipo Assicurazione" value={form["Tipo Assicurazione"]} onChange={v => set("Tipo Assicurazione", v)} />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>}
+        </div>
+
+        <div className="p-6 border-t border-border flex gap-3 justify-end shrink-0">
+          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all">
+            Annulla
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="ocean-gradient text-white px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-60 flex items-center gap-2">
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {saving ? "Salvo..." : "Aggiorna Profilo"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, type = "text", disabled = false }: { label: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1.5">{label}</label>
+      <input 
+        type={type} 
+        value={value} 
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+        className={`w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${disabled ? "bg-secondary text-muted-foreground cursor-not-allowed" : ""}`} 
+      />
     </div>
   )
 }
