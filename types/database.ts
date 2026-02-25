@@ -58,3 +58,13 @@ export type RicaricaCompressore = {
   // joined
   BP_soci?: Pick<Socio, "id" | "Nome" | "Cognome">
 }
+
+export type Certificato = {
+  id: number
+  created_at: string
+  socio: number | null
+  "Attività subacquea": boolean | null
+  "Data visita": string
+  "Data scadenza": string | null
+  PDF: string | null
+}
