@@ -10,7 +10,7 @@ export default async function CompressorePage() {
     supabase
       .from("AT_RicaricheCompressore")
       .select(`
-        id, data, mono, bibo, letturaFinale, note, created_at,
+        id, data, mono, bibo, letturaFinale, addetto, note, created_at,
         BP_soci(id, Nome, Cognome)
       `)
       .order("data", { ascending: false })
