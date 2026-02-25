@@ -374,7 +374,6 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
   const [form, setForm] = useState({
     Nome: socio.Nome ?? "",
     Cognome: socio.Cognome ?? "",
-    email: socio.email ?? "",
     Telefono: socio.Telefono ?? "",
     "Data di Nascita": socio["Data di Nascita"] ?? "",
     "Luogo di nascita": socio["Luogo di nascita"] ?? "",
@@ -387,6 +386,8 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
     Professione: socio.Professione ?? "",
     Specializzazione: socio.Specializzazione ?? "",
     "Tipo Assicurazione": socio["Tipo Assicurazione"] ?? "",
+    "Nota FIN": socio["Nota FIN"] ?? "",
+    "Nota Patente": socio["Nota Patente"] ?? "",
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -418,6 +419,8 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
       Professione: form.Professione,
       Specializzazione: form.Specializzazione,
       "Tipo Assicurazione": form["Tipo Assicurazione"],
+      "Nota FIN": form["Nota FIN"],
+      "Nota Patente": form["Nota Patente"],
     }
 
     const { error } = await supabase
@@ -451,10 +454,7 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
                 <Field label="Nome *" value={form.Nome} onChange={v => set("Nome", v)} />
                 <Field label="Cognome *" value={form.Cognome} onChange={v => set("Cognome", v)} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Email" value={form.email} onChange={v => set("email", v)} type="email" disabled />
-                <Field label="Telefono" value={form.Telefono} onChange={v => set("Telefono", v)} />
-              </div>
+              <Field label="Telefono" value={form.Telefono} onChange={v => set("Telefono", v)} />
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Data di Nascita" value={form["Data di Nascita"]} onChange={v => set("Data di Nascita", v)} type="date" />
                 <Field label="Luogo di Nascita" value={form["Luogo di nascita"]} onChange={v => set("Luogo di nascita", v)} />
@@ -476,11 +476,25 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
                 <Field label="Comune" value={form.Comune} onChange={v => set("Comune", v)} />
                 <Field label="Provincia" value={form.Provincia} onChange={v => set("Provincia", v)} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Nazione" value={form.Nazione} onChange={v => set("Nazione", v)} />
-                <Field label="Specializzazione" value={form.Specializzazione} onChange={v => set("Specializzazione", v)} />
-              </div>
+              <Field label="Nazione" value={form.Nazione} onChange={v => set("Nazione", v)} />
+            </div>
+          </div>
+
+          {/* Sub & Specializzazioni */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Sub & Specializzazioni</h3>
+            <div className="space-y-3">
+              <Field label="Specializzazione" value={form.Specializzazione} onChange={v => set("Specializzazione", v)} />
               <Field label="Tipo Assicurazione" value={form["Tipo Assicurazione"]} onChange={v => set("Tipo Assicurazione", v)} />
+            </div>
+          </div>
+
+          {/* Note */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Note & Extra</h3>
+            <div className="space-y-3">
+              <TextareaField label="Nota FIN" value={form["Nota FIN"]} onChange={v => set("Nota FIN", v)} />
+              <TextareaField label="Nota Patente Nautica" value={form["Nota Patente"]} onChange={v => set("Nota Patente", v)} />
             </div>
           </div>
 
@@ -513,6 +527,16 @@ function Field({ label, value, onChange, type = "text", disabled = false }: { la
         disabled={disabled}
         className={`w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${disabled ? "bg-secondary text-muted-foreground cursor-not-allowed" : ""}`} 
       />
+    </div>
+  )
+}
+
+function TextareaField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1.5">{label}</label>
+      <textarea value={value} onChange={e => onChange(e.target.value)} rows={2}
+        className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none transition-all" />
     </div>
   )
 }
