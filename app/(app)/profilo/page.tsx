@@ -17,7 +17,7 @@ export default async function ProfiloPage() {
       Indirizzo, CAP, Comune, Provincia, Nazione, CF, Professione,
       Attivo, "Addetto Ricarica", Assicurazione, "Tipo Assicurazione",
       FIN, "Nota FIN", "Patente Nautica", "Nota Patente",
-      Specializzazione, created_at,
+      Specializzazione, created_at, Avatar,
       UT_Brevetti(id, Nome, Didattica),
       UT_TipoSocio(id, Descrizione)
     `)

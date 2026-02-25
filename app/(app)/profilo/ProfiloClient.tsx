@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { User, Mail, Phone, CreditCard, MapPin, Shield, Anchor, Wind, Award, Calendar, Briefcase, CheckCircle, XCircle, KeyRound, Loader2, Camera, Pencil } from "lucide-react"
+import { User, Mail, Phone, CreditCard, MapPin, Shield, Anchor, Wind, Award, Calendar, Briefcase, CheckCircle, XCircle, KeyRound, Loader2, Camera, Pencil, FileText, Upload, Trash2, ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
@@ -23,6 +23,7 @@ export default function ProfiloClient({
 }) {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showCertificatiModal, setShowCertificatiModal] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
     socio?.Avatar ? `${AVATAR_BASE_URL}${socio.Avatar}` : null
   )
@@ -143,7 +144,13 @@ export default function ProfiloClient({
             </div>
 
             {/* Azioni */}
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {socio && (
+                <button onClick={() => setShowCertificatiModal(true)}
+                  className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-xl hover:bg-secondary transition-all font-medium">
+                  <FileText className="w-3.5 h-3.5" /> Certificati Medici
+                </button>
+              )}
               {socio && (
                 <button onClick={() => setShowEditModal(true)}
                   className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-xl hover:bg-secondary transition-all font-medium">
@@ -258,6 +265,10 @@ export default function ProfiloClient({
 
       {showEditModal && socio && (
         <EditProfiloModal socio={socio} onClose={() => setShowEditModal(false)} onSaved={() => { setShowEditModal(false); router.refresh() }} />
+      )}
+
+      {showCertificatiModal && socio && (
+        <CertificatiModal socioId={socio.id} onClose={() => setShowCertificatiModal(false)} />
       )}
     </div>
   )
@@ -388,6 +399,10 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
     "Tipo Assicurazione": socio["Tipo Assicurazione"] ?? "",
     "Nota FIN": socio["Nota FIN"] ?? "",
     "Nota Patente": socio["Nota Patente"] ?? "",
+    "Addetto Ricarica": socio["Addetto Ricarica"] ?? false,
+    FIN: socio.FIN ?? false,
+    "Patente Nautica": socio["Patente Nautica"] ?? false,
+    Assicurazione: socio.Assicurazione ?? false,
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -421,6 +436,10 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
       "Tipo Assicurazione": form["Tipo Assicurazione"],
       "Nota FIN": form["Nota FIN"],
       "Nota Patente": form["Nota Patente"],
+      "Addetto Ricarica": form["Addetto Ricarica"],
+      FIN: form.FIN,
+      "Patente Nautica": form["Patente Nautica"],
+      Assicurazione: form.Assicurazione,
     }
 
     const { error } = await supabase
@@ -486,6 +505,12 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
             <div className="space-y-3">
               <Field label="Specializzazione" value={form.Specializzazione} onChange={v => set("Specializzazione", v)} />
               <Field label="Tipo Assicurazione" value={form["Tipo Assicurazione"]} onChange={v => set("Tipo Assicurazione", v)} />
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <CheckField label="Addetto Ricarica" value={form["Addetto Ricarica"]} onChange={v => set("Addetto Ricarica", v)} icon={<Wind className="w-3.5 h-3.5" />} />
+                <CheckField label="Tesserato FIN" value={form.FIN} onChange={v => set("FIN", v)} icon={<Anchor className="w-3.5 h-3.5" />} />
+                <CheckField label="Patente Nautica" value={form["Patente Nautica"]} onChange={v => set("Patente Nautica", v)} icon={<Shield className="w-3.5 h-3.5" />} />
+                <CheckField label="Assicurazione" value={form.Assicurazione} onChange={v => set("Assicurazione", v)} icon={<Shield className="w-3.5 h-3.5" />} />
+              </div>
             </div>
           </div>
 
@@ -537,6 +562,313 @@ function TextareaField({ label, value, onChange }: { label: string; value: strin
       <label className="block text-sm font-medium mb-1.5">{label}</label>
       <textarea value={value} onChange={e => onChange(e.target.value)} rows={2}
         className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none transition-all" />
+    </div>
+  )
+}
+
+function CheckField({ label, value, onChange, icon }: { label: string; value: boolean; onChange: (v: boolean) => void; icon?: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all w-full ${value ? "border-primary bg-primary/5 text-primary" : "border-border bg-white text-muted-foreground hover:bg-secondary"}`}
+    >
+      <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${value ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+        {value && <CheckCircle className="w-3 h-3 text-white" />}
+      </span>
+      {icon && <span className="opacity-60">{icon}</span>}
+      {label}
+    </button>
+  )
+}
+
+// ── Certificati Modal ──────────────────────────────────────────────────────
+
+type Certificato = {
+  id: number
+  created_at: string
+  socio: number | null
+  "Attività subacquea": boolean | null
+  "Data visita": string
+  "Data scadenza": string | null
+  PDF: string | null
+}
+
+const CERT_BUCKET = "Certificati"
+const CERT_BASE_URL = process.env.NEXT_PUBLIC_CERTIFICATI_BASE_URL ?? ""
+
+function CertificatiModal({ socioId, onClose }: { socioId: number; onClose: () => void }) {
+  const supabase = createClient()
+  const [certificati, setCertificati] = useState<Certificato[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [form, setForm] = useState({
+    "Data visita": "",
+    "Data scadenza": "",
+    "Attività subacquea": false,
+    pdfFile: null as File | null,
+  })
+
+  useEffect(() => {
+    loadCertificati()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function loadCertificati() {
+    setLoading(true)
+    const { data } = await supabase
+      .from("BP_certificati")
+      .select("*")
+      .eq("socio", socioId)
+      .order("Data visita", { ascending: false })
+    setCertificati((data ?? []) as Certificato[])
+    setLoading(false)
+  }
+
+  function handleDataVisitaChange(val: string) {
+    // Calcola automaticamente data scadenza = data visita + 1 anno
+    let scadenza = ""
+    if (val) {
+      const d = new Date(val)
+      d.setFullYear(d.getFullYear() + 1)
+      scadenza = d.toISOString().split("T")[0]
+    }
+    setForm(f => ({ ...f, "Data visita": val, "Data scadenza": scadenza }))
+  }
+
+  async function handleSubmit() {
+    if (!form["Data visita"]) { setError("La data di visita è obbligatoria"); return }
+    setUploading(true)
+    setError(null)
+
+    let pdfPath: string | null = null
+
+    if (form.pdfFile) {
+      const ext = form.pdfFile.name.split(".").pop()?.toLowerCase() ?? "pdf"
+      const fileName = `${socioId}_${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage
+        .from(CERT_BUCKET)
+        .upload(fileName, form.pdfFile, { upsert: false, contentType: "application/pdf" })
+      if (uploadErr) {
+        setError(`Errore upload PDF: ${uploadErr.message}`)
+        setUploading(false)
+        return
+      }
+      pdfPath = fileName
+    }
+
+    const { error: dbErr } = await supabase.from("BP_certificati").insert({
+      socio: socioId,
+      "Data visita": form["Data visita"],
+      "Data scadenza": form["Data scadenza"] || null,
+      "Attività subacquea": form["Attività subacquea"],
+      PDF: pdfPath,
+    })
+
+    if (dbErr) {
+      setError(`Errore salvataggio: ${dbErr.message}`)
+      setUploading(false)
+      return
+    }
+
+    setForm({ "Data visita": "", "Data scadenza": "", "Attività subacquea": false, pdfFile: null })
+    setShowForm(false)
+    setUploading(false)
+    loadCertificati()
+  }
+
+  async function handleDelete(cert: Certificato) {
+    setDeleting(cert.id)
+    if (cert.PDF) {
+      await supabase.storage.from(CERT_BUCKET).remove([cert.PDF])
+    }
+    await supabase.from("BP_certificati").delete().eq("id", cert.id)
+    setDeleting(null)
+    loadCertificati()
+  }
+
+  function isScaduto(scadenza: string | null) {
+    if (!scadenza) return false
+    return new Date(scadenza) < new Date()
+  }
+
+  function formatDate(d: string | null) {
+    if (!d) return "—"
+    return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col mt-4 mb-4">
+        {/* Header */}
+        <div className="p-6 border-b border-border shrink-0 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
+              Certificati Medici
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Gestisci i tuoi certificati di idoneità</p>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-secondary">
+            <XCircle className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+          {/* Bottone aggiungi */}
+          {!showForm && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="ocean-gradient text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md hover:opacity-90 transition-all"
+            >
+              <Upload className="w-4 h-4" /> Carica nuovo certificato
+            </button>
+          )}
+
+          {/* Form nuovo certificato */}
+          {showForm && (
+            <div className="bg-secondary/40 rounded-2xl p-5 space-y-4 border border-border">
+              <h3 className="text-sm font-semibold">Nuovo certificato</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Data visita *</label>
+                  <input
+                    type="date"
+                    value={form["Data visita"]}
+                    onChange={e => handleDataVisitaChange(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Data scadenza</label>
+                  <input
+                    type="date"
+                    value={form["Data scadenza"]}
+                    onChange={e => setForm(f => ({ ...f, "Data scadenza": e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Calcolata automaticamente (+1 anno)</p>
+                </div>
+              </div>
+
+              <CheckField
+                label="Attività subacquea"
+                value={form["Attività subacquea"]}
+                onChange={v => setForm(f => ({ ...f, "Attività subacquea": v }))}
+                icon={<Anchor className="w-3.5 h-3.5" />}
+              />
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5">PDF certificato</label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed border-border hover:border-primary/40 cursor-pointer transition-all bg-white"
+                >
+                  <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground truncate">
+                    {form.pdfFile ? form.pdfFile.name : "Clicca per selezionare un PDF"}
+                  </span>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={e => setForm(f => ({ ...f, pdfFile: e.target.files?.[0] ?? null }))}
+                />
+              </div>
+
+              {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>}
+
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => { setShowForm(false); setError(null) }} className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all">
+                  Annulla
+                </button>
+                <button onClick={handleSubmit} disabled={uploading}
+                  className="ocean-gradient text-white px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-60 flex items-center gap-2">
+                  {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {uploading ? "Salvo..." : "Salva certificato"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Lista certificati */}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : certificati.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Nessun certificato caricato</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {certificati.map(cert => {
+                const scaduto = isScaduto(cert["Data scadenza"])
+                const inScadenza = cert["Data scadenza"] && !scaduto &&
+                  (new Date(cert["Data scadenza"]).getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000
+                return (
+                  <div key={cert.id}
+                    className={`flex items-center justify-between p-4 rounded-2xl border ${scaduto ? "border-red-200 bg-red-50" : inScadenza ? "border-amber-200 bg-amber-50" : "border-border bg-white"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${scaduto ? "bg-red-100" : inScadenza ? "bg-amber-100" : "bg-emerald-50"}`}>
+                        <FileText className={`w-4 h-4 ${scaduto ? "text-red-500" : inScadenza ? "text-amber-500" : "text-emerald-500"}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold">Visita: {formatDate(cert["Data visita"])}</p>
+                          {cert["Attività subacquea"] && (
+                            <span className="text-xs bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded-full font-medium">Subacquea</span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 ${scaduto ? "text-red-600 font-medium" : inScadenza ? "text-amber-600 font-medium" : "text-muted-foreground"}`}>
+                          {scaduto ? "⚠ Scaduto il " : inScadenza ? "⏳ Scade il " : "✓ Scade il "}
+                          {formatDate(cert["Data scadenza"])}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {cert.PDF && (
+                        <a
+                          href={`${CERT_BASE_URL}${cert.PDF}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-xl hover:bg-secondary transition-all text-muted-foreground hover:text-foreground"
+                          title="Apri PDF"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleDelete(cert)}
+                        disabled={deleting === cert.id}
+                        className="p-2 rounded-xl hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500"
+                        title="Elimina"
+                      >
+                        {deleting === cert.id
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-border shrink-0 flex justify-end">
+          <button onClick={onClose} className="px-5 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all">
+            Chiudi
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
