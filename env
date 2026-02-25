@@ -1,8 +1,0 @@
-# Supabase - copia questo file in .env.local e inserisci i tuoi valori
-# Trovi questi valori in: Supabase Dashboard → Settings → API
-
-NEXT_PUBLIC_SUPABASE_URL=https://TUO_PROJECT_ID.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=TUA_ANON_KEY
-
-# URL base per le immagini Avatar nello Supabase Storage
-NEXT_PUBLIC_AVATAR_BASE_URL=https://wsqrhxgulnyolscuptiu.supabase.co/storage/v1/object/public/Avatar/
