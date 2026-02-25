@@ -10,9 +10,13 @@ export default async function SociPage() {
     supabase
       .from("BP_soci")
       .select(`
-        id, Nome, Cognome, email, Telefono, Attivo, Brevetto, Avatar,
-        "Addetto Ricarica", "Patente Nautica", Assicurazione, FIN,
-        "Tipo Socio New",
+       id, Nome, Cognome, email, Telefono, Attivo, Brevetto, Avatar,
+        "Addetto Ricarica", "Patente Nautica", Assicurazione, FIN,        
+        "Data di Nascita", "Luogo di nascita",
+        Indirizzo, CAP, Comune, Provincia, Nazione,
+        CF, Professione, Specializzazione,
+        "Tipo Assicurazione",
+        "Nota FIN", "Nota Patente",
         UT_Brevetti(id, Nome),
         UT_TipoSocio(id, Descrizione)
       `)
