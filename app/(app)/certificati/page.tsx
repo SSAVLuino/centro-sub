@@ -42,12 +42,12 @@ export default async function CertificatiPage() {
   const senzaCertificato = totaleAttivi - conCertificato
 
   let validi = 0, inScadenza = 0, scaduti = 0
-  for (const cert of certPerSocio.values()) {
+  Array.from(certPerSocio.values()).forEach(cert => {
     const scad = cert["Data scadenza"]
     if (!scad || scad < today) scaduti++
     else if (scad <= in30days) inScadenza++
     else validi++
-  }
+  })
 
   return (
     <CertificatiClient
