@@ -80,7 +80,7 @@ export default function LoginPage() {
   }
 
   const titles: Record<Mode, { title: string; sub: string }> = {
-    login: { title: "Centro Sub", sub: "Accedi al gestionale" },
+    login: { title: "Salvataggio Sub Alto Verbano", sub: "a Luino dal 1978" },
     register: { title: "Registrati", sub: "Crea il tuo account" },
     reset: { title: "Password dimenticata?", sub: "Ti invieremo un link di recupero" },
   }
