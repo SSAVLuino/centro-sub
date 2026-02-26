@@ -3,23 +3,34 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Waves, LayoutDashboard, Users, Wind, LogOut, Menu, X, User, FileText } from "lucide-react"
+import { Waves, LayoutDashboard, Users, Wind, LogOut, Menu, X, User, FileText, Package, Wrench } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { canAccess } from "@/lib/roles-client"
+import type { UserRole } from "@/lib/roles-client"
 import { clsx } from "clsx"
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/soci", label: "Soci", icon: Users },
-  { href: "/compressore", label: "Compressore", icon: Wind },
-  { href: "/certificati", label: "Certificati", icon: FileText },
-  { href: "/profilo", label: "Profilo", icon: User },
+// Definizione voci di menu con ruolo minimo richiesto (undefined = tutti)
+const navItems: { href: string; label: string; icon: React.ElementType; minRole?: UserRole }[] = [
+  { href: "/dashboard",   label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/soci",        label: "Soci",        icon: Users },
+  { href: "/compressore", label: "Compressore", icon: Wind,      minRole: "Staff" },
+  { href: "/bombole",     label: "Bombole",     icon: Package,   minRole: "Consiglio" },
+  { href: "/certificati", label: "Certificati", icon: FileText,  minRole: "Consiglio" },
+  { href: "/inventario",  label: "Inventario",  icon: Package,   minRole: "Staff" },
+  { href: "/noleggio",    label: "Noleggio",    icon: Wrench,    minRole: "Staff" },
+  { href: "/profilo",     label: "Profilo",     icon: User },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ userRole }: { userRole: UserRole }) {
   const pathname = usePathname()
-  const router = useRouter()
+  const router   = useRouter()
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Filtra le voci in base al ruolo
+  const visibleItems = navItems.filter(item =>
+    !item.minRole || canAccess(item.minRole, userRole)
+  )
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -29,13 +40,15 @@ export default function Sidebar() {
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <>
-      {navItems.map(({ href, label, icon: Icon }) => {
+      {visibleItems.map(({ href, label, icon: Icon }) => {
         const active = pathname.startsWith(href)
         return (
           <Link key={href} href={href} onClick={onClick}
             className={clsx(
               "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-              active ? "ocean-gradient text-white shadow-md" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              active
+                ? "ocean-gradient text-white shadow-md"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}>
             <Icon className="w-4 h-4 shrink-0" />
             {label}
@@ -60,9 +73,18 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
+
         <nav className="flex-1 p-4 space-y-1">
           <NavLinks />
         </nav>
+
+        {/* Badge ruolo */}
+        <div className="px-4 pb-2">
+          <span className="inline-block text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+            {userRole}
+          </span>
+        </div>
+
         <div className="p-4 border-t border-border">
           <button onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all w-full">
@@ -94,7 +116,10 @@ export default function Sidebar() {
             onClick={e => e.stopPropagation()}
           >
             <NavLinks onClick={() => setMobileOpen(false)} />
-            <div className="pt-2 border-t border-border mt-2">
+            <div className="pt-2 border-t border-border mt-2 space-y-2">
+              <span className="inline-block text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+                {userRole}
+              </span>
               <button onClick={handleLogout}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all w-full">
                 <LogOut className="w-4 h-4" /> Esci
@@ -104,7 +129,7 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* ── MOBILE spacer (pushes content below topbar) ─ */}
+      {/* ── MOBILE spacer ─────────────────────────────── */}
       <div className="md:hidden h-14 shrink-0" />
     </>
   )

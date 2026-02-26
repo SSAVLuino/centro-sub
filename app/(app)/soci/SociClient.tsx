@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Plus, CheckCircle, XCircle, Shield, Anchor, Wind, Pencil } from "lucide-react"
+import { Search, Plus, CheckCircle, XCircle, Shield, Anchor, Wind, Pencil, Trash2, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { canAccess } from "@/lib/roles-client"
+import type { UserRole } from "@/lib/roles-client"
 import { useRouter } from "next/navigation"
 
 const AVATAR_BASE_URL = process.env.NEXT_PUBLIC_AVATAR_BASE_URL ?? ""
@@ -21,13 +23,16 @@ const emptyForm = {
   FIN: false, "Patente Nautica": false,
 }
 
-export default function SociClient({ soci, brevetti, tipiSocio }: {
-  soci: Socio[]; brevetti: Brevetto[]; tipiSocio: TipoSocio[]
+export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
+  soci: Socio[]; brevetti: Brevetto[]; tipiSocio: TipoSocio[]; userRole: UserRole
 }) {
   const [search, setSearch] = useState("")
   const [filterAttivo, setFilterAttivo] = useState<"all" | "true" | "false">("all")
   const [showModal, setShowModal] = useState(false)
   const [editSocio, setEditSocio] = useState<Socio | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Socio | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const supabase = createClient()
   const router = useRouter()
 
   const filtered = soci.filter((s) => {
@@ -36,6 +41,15 @@ export default function SociClient({ soci, brevetti, tipiSocio }: {
     const matchAttivo = filterAttivo === "all" || (filterAttivo === "true" && s.Attivo) || (filterAttivo === "false" && !s.Attivo)
     return matchSearch && matchAttivo
   })
+
+  async function handleDelete() {
+    if (!confirmDelete) return
+    setDeleting(true)
+    await supabase.from("BP_soci").delete().eq("id", confirmDelete.id)
+    setConfirmDelete(null)
+    setDeleting(false)
+    router.refresh()
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -124,10 +138,20 @@ export default function SociClient({ soci, brevetti, tipiSocio }: {
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-center">
-                    <button onClick={() => setEditSocio(s)}
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-all font-medium">
-                      <Pencil className="w-3 h-3" /> Modifica
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      {canAccess("Consiglio", userRole) && (
+                        <button onClick={() => setEditSocio(s)}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-all font-medium">
+                          <Pencil className="w-3 h-3" /> Modifica
+                        </button>
+                      )}
+                      {canAccess("Admin", userRole) && (
+                        <button onClick={() => setConfirmDelete(s)}
+                          className="inline-flex items-center gap-1 text-xs text-destructive hover:bg-destructive/10 px-3 py-1.5 rounded-lg transition-all font-medium">
+                          <Trash2 className="w-3 h-3" /> Elimina
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -135,6 +159,28 @@ export default function SociClient({ soci, brevetti, tipiSocio }: {
           </table>
         </div>
       </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
+            <h2 className="text-lg font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>Conferma eliminazione</h2>
+            <p className="text-sm text-muted-foreground">
+              Sei sicuro di voler eliminare <strong>{confirmDelete.Nome} {confirmDelete.Cognome}</strong>? L&apos;operazione è irreversibile.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <button onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all">
+                Annulla
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="bg-destructive text-white px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-60 flex items-center gap-2">
+                {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {deleting ? "Elimino..." : "Elimina"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <SocioModal mode="add" brevetti={brevetti} tipiSocio={tipiSocio}

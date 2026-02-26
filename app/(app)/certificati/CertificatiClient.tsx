@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { FileText, CheckCircle, XCircle, AlertTriangle, Users, Search, ExternalLink } from "lucide-react"
+import { FileText, CheckCircle, XCircle, AlertTriangle, Search, ExternalLink } from "lucide-react"
+import type { UserRole } from "@/lib/roles-client"
+import { useSignedUrls } from "@/lib/useSignedUrl"
 
 const AVATAR_BASE_URL = process.env.NEXT_PUBLIC_AVATAR_BASE_URL ?? ""
-const CERT_BASE_URL = process.env.NEXT_PUBLIC_CERTIFICATI_BASE_URL ?? ""
 
-type Socio = { id: number; Nome: string | null; Cognome: string | null; Avatar: string | null }
 type Certificato = {
   id: number
   socio: number | null
@@ -16,58 +16,84 @@ type Certificato = {
   PDF: string | null
   created_at: string
 }
-type Stats = {
-  totaleAttivi: number
-  conCertificato: number
-  senzaCertificato: number
-  validi: number
-  inScadenza: number
-  scaduti: number
-}
-type Filter = "tutti" | "valido" | "in_scadenza" | "scaduto" | "assente"
+type SocioRef = { id: number; Nome: string | null; Cognome: string | null; Avatar: string | null }
 
-interface CertificatiClientProps {
-  sociAttivi: Socio[]
+type Filter = "tutti" | "valido" | "in_scadenza" | "scaduto"
+
+interface Props {
   certificati: Certificato[]
-  stats: Stats
+  soci: SocioRef[]
+  userRole: UserRole
 }
 
-export default function CertificatiClient({ sociAttivi, certificati, stats }: CertificatiClientProps) {
+export default function CertificatiClient({ certificati, soci }: Props) {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<Filter>("tutti")
 
-  const today = new Date().toISOString().split("T")[0]
+  const today    = new Date().toISOString().split("T")[0]
   const in30days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
 
+  // Mappa id → socio per lookup veloce
+  const sociMap = useMemo(() => {
+    const m = new Map<number, SocioRef>()
+    for (const s of soci) m.set(s.id, s)
+    return m
+  }, [soci])
+
+  // Per ogni socio teniamo solo il certificato più recente (già ordinati DESC per Data visita)
   const certPerSocio = useMemo(() => {
-    const map = new Map<number, Certificato>()
+    const m = new Map<number, Certificato>()
     for (const cert of certificati) {
       if (!cert.socio) continue
-      if (!map.has(cert.socio)) map.set(cert.socio, cert)
+      if (!m.has(cert.socio)) m.set(cert.socio, cert)
     }
-    return map
+    return m
   }, [certificati])
 
-  function getStatus(socioId: number): "valido" | "in_scadenza" | "scaduto" | "assente" {
-    const cert = certPerSocio.get(socioId)
-    if (!cert) return "assente"
+  function getStatus(cert: Certificato): "valido" | "in_scadenza" | "scaduto" {
     const scad = cert["Data scadenza"]
-    if (!scad || scad < today) return "scaduto"
-    if (scad <= in30days) return "in_scadenza"
+    if (!scad || scad < today)  return "scaduto"
+    if (scad <= in30days)       return "in_scadenza"
     return "valido"
   }
 
+  const stats = useMemo(() => {
+    let validi = 0, inScadenza = 0, scaduti = 0
+    for (const cert of certPerSocio.values()) {
+      const s = getStatus(cert)
+      if (s === "valido")           validi++
+      else if (s === "in_scadenza") inScadenza++
+      else                          scaduti++
+    }
+    return { totale: certPerSocio.size, validi, inScadenza, scaduti }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [certPerSocio])
+
   const rows = useMemo(() => {
-    return sociAttivi
-      .map(s => ({ socio: s, cert: certPerSocio.get(s.id) ?? null, status: getStatus(s.id) }))
+    return Array.from(certPerSocio.entries())
+      .map(([socioId, cert]) => ({
+        cert,
+        socio: sociMap.get(socioId) ?? null,
+        status: getStatus(cert),
+      }))
       .filter(({ socio, status }) => {
-        const q = search.toLowerCase()
-        const matchSearch = !q || `${socio.Nome} ${socio.Cognome}`.toLowerCase().includes(q)
+        if (!socio) return false
+        const nome = `${socio.Nome ?? ""} ${socio.Cognome ?? ""}`.toLowerCase()
+        const matchSearch = !search || nome.includes(search.toLowerCase())
         const matchFilter = filter === "tutti" || status === filter
         return matchSearch && matchFilter
       })
+      .sort((a, b) => {
+        const na = `${a.socio?.Cognome} ${a.socio?.Nome}`.toLowerCase()
+        const nb = `${b.socio?.Cognome} ${b.socio?.Nome}`.toLowerCase()
+        return na.localeCompare(nb)
+      })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sociAttivi, certPerSocio, search, filter])
+  }, [certPerSocio, sociMap, search, filter])
+
+  // Signed URL per tutti i PDF visibili
+  const pdfPaths = useMemo(() => rows.map(r => r.cert.PDF), [rows])
+  const pdfUrls  = useSignedUrls("Certificati", pdfPaths)
 
   function formatDate(d: string | null) {
     if (!d) return "—"
@@ -75,30 +101,28 @@ export default function CertificatiClient({ sociAttivi, certificati, stats }: Ce
   }
 
   const statsCards = [
-    { label: "Soci attivi", value: stats.totaleAttivi, sub: "totale", icon: <Users className="w-4 h-4 text-white" />, gradient: "from-blue-500 to-cyan-500" },
-    { label: "Con certificato", value: stats.conCertificato, sub: `${stats.senzaCertificato} senza`, icon: <FileText className="w-4 h-4 text-white" />, gradient: "from-teal-500 to-emerald-500" },
-    { label: "Validi", value: stats.validi, sub: "certificati attivi", icon: <CheckCircle className="w-4 h-4 text-white" />, gradient: "from-emerald-500 to-green-500" },
-    { label: "In scadenza", value: stats.inScadenza, sub: "entro 30 giorni", icon: <AlertTriangle className="w-4 h-4 text-white" />, gradient: "from-amber-500 to-orange-500" },
-    { label: "Scaduti / Assenti", value: stats.scaduti + stats.senzaCertificato, sub: "da regolarizzare", icon: <XCircle className="w-4 h-4 text-white" />, gradient: "from-red-500 to-rose-500" },
+    { label: "Con certificato", value: stats.totale,     sub: "soci nel sistema",   icon: <FileText className="w-4 h-4 text-white" />,       gradient: "from-teal-500 to-emerald-500" },
+    { label: "Validi",          value: stats.validi,     sub: "certificati attivi", icon: <CheckCircle className="w-4 h-4 text-white" />,     gradient: "from-emerald-500 to-green-500" },
+    { label: "In scadenza",     value: stats.inScadenza, sub: "entro 30 giorni",    icon: <AlertTriangle className="w-4 h-4 text-white" />,   gradient: "from-amber-500 to-orange-500" },
+    { label: "Scaduti",         value: stats.scaduti,    sub: "da rinnovare",       icon: <XCircle className="w-4 h-4 text-white" />,         gradient: "from-red-500 to-rose-500" },
   ]
 
   const filterButtons: { key: Filter; label: string; color: string }[] = [
-    { key: "tutti", label: "Tutti", color: "" },
-    { key: "valido", label: "Validi", color: "text-emerald-700" },
+    { key: "tutti",       label: "Tutti",       color: "" },
+    { key: "valido",      label: "Validi",      color: "text-emerald-700" },
     { key: "in_scadenza", label: "In scadenza", color: "text-amber-700" },
-    { key: "scaduto", label: "Scaduti", color: "text-red-700" },
-    { key: "assente", label: "Assenti", color: "text-gray-500" },
+    { key: "scaduto",     label: "Scaduti",     color: "text-red-700" },
   ]
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold">Certificati Medici</h1>
-        <p className="text-muted-foreground mt-1">Panoramica idoneità medica dei soci attivi</p>
+        <p className="text-muted-foreground mt-1">Soci con almeno un certificato caricato</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {statsCards.map((s, i) => (
           <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-border">
             <div className="flex items-center justify-between mb-2">
@@ -154,42 +178,47 @@ export default function CertificatiClient({ sociAttivi, certificati, stats }: Ce
             </thead>
             <tbody className="divide-y divide-border">
               {rows.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">Nessun socio trovato.</td></tr>
-              ) : rows.map(({ socio, cert, status }) => (
-                <tr key={socio.id} className="hover:bg-secondary/30 transition-colors">
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                    {search || filter !== "tutti" ? "Nessun risultato per i filtri applicati." : "Nessun certificato caricato."}
+                  </td>
+                </tr>
+              ) : rows.map(({ cert, socio, status }) => (
+                <tr key={cert.id} className="hover:bg-secondary/30 transition-colors">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full ocean-gradient flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
-                        {socio.Avatar
+                        {socio?.Avatar
+                          // eslint-disable-next-line @next/next/no-img-element
                           ? <img src={`${AVATAR_BASE_URL}${socio.Avatar}`} alt="" className="w-full h-full object-cover" />
-                          : <>{socio.Nome?.[0] ?? "?"}{socio.Cognome?.[0] ?? ""}</>}
+                          : <>{socio?.Nome?.[0] ?? "?"}{socio?.Cognome?.[0] ?? ""}</>}
                       </div>
-                      <p className="font-medium">{socio.Nome} {socio.Cognome}</p>
+                      <p className="font-medium">{socio?.Nome} {socio?.Cognome}</p>
                     </div>
                   </td>
                   <td className="px-5 py-3.5"><StatusBadge status={status} /></td>
-                  <td className="px-5 py-3.5 text-sm text-muted-foreground">{cert ? formatDate(cert["Data visita"]) : "—"}</td>
+                  <td className="px-5 py-3.5 text-sm text-muted-foreground">{formatDate(cert["Data visita"])}</td>
                   <td className="px-5 py-3.5">
-                    {cert?.["Data scadenza"] ? (
+                    {cert["Data scadenza"] ? (
                       <span className={`text-sm font-medium ${
-                        status === "scaduto" ? "text-red-600" :
+                        status === "scaduto"     ? "text-red-600" :
                         status === "in_scadenza" ? "text-amber-600" : "text-emerald-600"
                       }`}>{formatDate(cert["Data scadenza"])}</span>
                     ) : <span className="text-sm text-muted-foreground">—</span>}
                   </td>
                   <td className="px-5 py-3.5 text-center">
-                    {cert ? (
-                      cert["Attività subacquea"]
-                        ? <span className="inline-flex items-center gap-1 text-xs bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded-full font-medium">✓ Sì</span>
-                        : <span className="text-xs text-muted-foreground">No</span>
-                    ) : <span className="text-muted-foreground">—</span>}
+                    {cert["Attività subacquea"]
+                      ? <span className="inline-flex items-center gap-1 text-xs bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded-full font-medium">✓ Sì</span>
+                      : <span className="text-xs text-muted-foreground">No</span>}
                   </td>
                   <td className="px-5 py-3.5 text-center">
-                    {cert?.PDF ? (
-                      <a href={`${CERT_BASE_URL}${cert.PDF}`} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                        <ExternalLink className="w-3.5 h-3.5" /> Apri
-                      </a>
+                    {cert.PDF ? (
+                      pdfUrls.get(cert.PDF)
+                        ? <a href={pdfUrls.get(cert.PDF)!} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+                            <ExternalLink className="w-3.5 h-3.5" /> Apri
+                          </a>
+                        : <span className="text-xs text-muted-foreground animate-pulse">...</span>
                     ) : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                 </tr>
@@ -199,7 +228,7 @@ export default function CertificatiClient({ sociAttivi, certificati, stats }: Ce
         </div>
         {rows.length > 0 && (
           <div className="px-5 py-3 border-t border-border bg-secondary/30 text-xs text-muted-foreground">
-            {rows.length} soci visualizzati
+            {rows.length} {rows.length === 1 ? "socio" : "soci"} visualizzati
           </div>
         )}
       </div>
@@ -207,12 +236,11 @@ export default function CertificatiClient({ sociAttivi, certificati, stats }: Ce
   )
 }
 
-function StatusBadge({ status }: { status: "valido" | "in_scadenza" | "scaduto" | "assente" }) {
+function StatusBadge({ status }: { status: "valido" | "in_scadenza" | "scaduto" }) {
   const config = {
-    valido: { label: "Valido", className: "bg-emerald-50 text-emerald-700", icon: <CheckCircle className="w-3 h-3" /> },
-    in_scadenza: { label: "In scadenza", className: "bg-amber-50 text-amber-700", icon: <AlertTriangle className="w-3 h-3" /> },
-    scaduto: { label: "Scaduto", className: "bg-red-50 text-red-700", icon: <XCircle className="w-3 h-3" /> },
-    assente: { label: "Assente", className: "bg-gray-100 text-gray-500", icon: <FileText className="w-3 h-3" /> },
+    valido:      { label: "Valido",      className: "bg-emerald-50 text-emerald-700", icon: <CheckCircle className="w-3 h-3" /> },
+    in_scadenza: { label: "In scadenza", className: "bg-amber-50 text-amber-700",    icon: <AlertTriangle className="w-3 h-3" /> },
+    scaduto:     { label: "Scaduto",     className: "bg-red-50 text-red-700",        icon: <XCircle className="w-3 h-3" /> },
   }
   const { label, className, icon } = config[status]
   return (

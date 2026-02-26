@@ -1,10 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
+import { getUserRole, hasAccess } from "@/lib/roles"
+import { redirect } from "next/navigation"
 import CompressoreClient from "./CompressoreClient"
 
 export const dynamic = 'force-dynamic'
 
 export default async function CompressorePage() {
   const supabase = createClient()
+  const userRole = await getUserRole()
+
+  // Solo Staff+ può accedere
+  if (!hasAccess("Staff", userRole)) redirect("/dashboard")
 
   const [{ data: ricariche }, { data: addetti }] = await Promise.all([
     supabase
@@ -23,5 +29,5 @@ export default async function CompressorePage() {
       .order("Cognome"),
   ])
 
-  return <CompressoreClient ricariche={ricariche ?? []} addetti={addetti ?? []} />
+  return <CompressoreClient ricariche={ricariche ?? []} addetti={addetti ?? []} userRole={userRole} />
 }

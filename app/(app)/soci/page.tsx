@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getUserRole } from "@/lib/roles"
 import SociClient from "./SociClient"
 
 export const dynamic = 'force-dynamic'
@@ -6,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export default async function SociPage() {
   const supabase = createClient()
 
-  const [{ data: soci }, { data: brevetti }, { data: tipiSocio }] = await Promise.all([
+  const [{ data: soci }, { data: brevetti }, { data: tipiSocio }, userRole] = await Promise.all([
     supabase
       .from("BP_soci")
       .select(`
@@ -23,7 +24,15 @@ export default async function SociPage() {
       .order("Cognome", { ascending: true }),
     supabase.from("UT_Brevetti").select("id, Nome").order("Ordinamento"),
     supabase.from("UT_TipoSocio").select("id, Descrizione"),
+    getUserRole(),
   ])
 
-  return <SociClient soci={soci ?? []} brevetti={brevetti ?? []} tipiSocio={tipiSocio ?? []} />
+  return (
+    <SociClient
+      soci={soci ?? []}
+      brevetti={brevetti ?? []}
+      tipiSocio={tipiSocio ?? []}
+      userRole={userRole}
+    />
+  )
 }

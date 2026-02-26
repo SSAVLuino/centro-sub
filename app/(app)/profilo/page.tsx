@@ -9,7 +9,6 @@ export default async function ProfiloPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // Cerca il socio associato all'email dell'utente loggato
   const { data: socio } = await supabase
     .from("BP_soci")
     .select(`
@@ -24,19 +23,28 @@ export default async function ProfiloPage() {
     .eq("email", user.email!)
     .single()
 
-  // Conta le ricariche effettuate come addetto
-  const { count: ricaricheCount } = socio
-    ? await supabase
-        .from("AT_RicaricheCompressore")
-        .select("*", { count: "exact", head: true })
-        .eq("addetto", socio.id)
-    : { count: 0 }
+  const [ricaricheResult, bomboleResult] = await Promise.all([
+    socio
+      ? supabase
+          .from("AT_RicaricheCompressore")
+          .select("*", { count: "exact", head: true })
+          .eq("addetto", socio.id)
+      : Promise.resolve({ count: 0 }),
+    socio
+      ? supabase
+          .from("AT_Bombole")
+          .select(`id, "Matricola", "Codice", "Etichetta", "Volume", "Marca", "Materiale", "Attacco", "Foto", "Stato Revisione", "Ultima Revisione", "Dismessa", "Nota"`)
+          .eq("Proprietario", socio.id)
+          .order("id")
+      : Promise.resolve({ data: [] }),
+  ])
 
   return (
     <ProfiloClient
       user={user}
       socio={socio}
-      ricaricheCount={ricaricheCount ?? 0}
+      ricaricheCount={(ricaricheResult as any).count ?? 0}
+      bombole={(bomboleResult as any).data ?? []}
     />
   )
 }

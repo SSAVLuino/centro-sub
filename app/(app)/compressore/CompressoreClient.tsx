@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { Plus, Wind, Gauge, Pencil, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { canAccess } from "@/lib/roles-client"
+import type { UserRole } from "@/lib/roles-client"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { it } from "date-fns/locale"
@@ -10,8 +12,8 @@ import { it } from "date-fns/locale"
 type Ricarica = any
 type Addetto = { id: number; Nome: string | null; Cognome: string | null }
 
-export default function CompressoreClient({ ricariche, addetti }: {
-  ricariche: Ricarica[]; addetti: Addetto[]
+export default function CompressoreClient({ ricariche, addetti, userRole }: {
+  ricariche: Ricarica[]; addetti: Addetto[]; userRole: UserRole
 }) {
   const [showModal, setShowModal] = useState(false)
   const [editRicarica, setEditRicarica] = useState<Ricarica | null>(null)
@@ -39,10 +41,12 @@ export default function CompressoreClient({ ricariche, addetti }: {
           <h1 className="text-3xl font-bold">Compressore</h1>
           <p className="text-muted-foreground mt-1">Log ricariche e letture</p>
         </div>
-        <button onClick={() => setShowModal(true)}
-          className="ocean-gradient text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md hover:opacity-90 transition-all">
-          <Plus className="w-4 h-4" /> Nuova Ricarica
-        </button>
+        {canAccess("Staff", userRole) && (
+          <button onClick={() => setShowModal(true)}
+            className="ocean-gradient text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md hover:opacity-90 transition-all">
+            <Plus className="w-4 h-4" /> Nuova Ricarica
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -53,7 +57,7 @@ export default function CompressoreClient({ ricariche, addetti }: {
             <Gauge className="w-5 h-5 text-primary" />
           </div>
           <p className="text-2xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
-            {ultimaLettura !== null ? `${ultimaLettura} bar` : "—"}
+            {ultimaLettura !== null ? `${ultimaLettura} h` : "—"}
           </p>
         </div>
         <div className="bg-white rounded-2xl p-5 border border-border shadow-sm">
@@ -106,7 +110,7 @@ export default function CompressoreClient({ ricariche, addetti }: {
                       : "—"}
                   </td>
                   <td className="px-5 py-3.5 text-center font-semibold text-primary">
-                    {r.letturaFinale !== null ? `${r.letturaFinale} bar` : "—"}
+                    {r.letturaFinale !== null ? `${r.letturaFinale} h` : "—"}
                   </td>
                   <td className="px-5 py-3.5 text-muted-foreground">
                     {r.BP_soci ? `${r.BP_soci.Nome} ${r.BP_soci.Cognome}` : "—"}
@@ -116,14 +120,18 @@ export default function CompressoreClient({ ricariche, addetti }: {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-center gap-1">
-                      <button onClick={() => setEditRicarica(r)}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:bg-primary/10 px-2.5 py-1.5 rounded-lg transition-all font-medium">
-                        <Pencil className="w-3 h-3" /> Modifica
-                      </button>
-                      <button onClick={() => setConfirmDelete(r)}
-                        className="inline-flex items-center gap-1 text-xs text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-lg transition-all font-medium">
-                        <Trash2 className="w-3 h-3" /> Elimina
-                      </button>
+                      {canAccess("Staff", userRole) && (
+                        <button onClick={() => setEditRicarica(r)}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:bg-primary/10 px-2.5 py-1.5 rounded-lg transition-all font-medium">
+                          <Pencil className="w-3 h-3" /> Modifica
+                        </button>
+                      )}
+                      {canAccess("Consiglio", userRole) && (
+                        <button onClick={() => setConfirmDelete(r)}
+                          className="inline-flex items-center gap-1 text-xs text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-lg transition-all font-medium">
+                          <Trash2 className="w-3 h-3" /> Elimina
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -243,7 +251,7 @@ function RicaricaModal({ mode, ricarica, addetti, onClose, onSaved }: {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Lettura Finale (bar)</label>
+            <label className="block text-sm font-medium mb-1.5">Lettura Finale (ore)</label>
             <input type="number" value={form.letturaFinale} onChange={e => set("letturaFinale", e.target.value)} placeholder="es. 285"
               className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>

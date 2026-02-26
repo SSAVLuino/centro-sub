@@ -37,7 +37,7 @@ export default async function DashboardPage() {
     },
     {
       label: "Ultima Lettura",
-      value: ultimaRicarica?.letturaFinale ? `${ultimaRicarica.letturaFinale} bar` : "—",
+      value: ultimaRicarica?.letturaFinale ? `${ultimaRicarica.letturaFinale} h` : "—",
       sub: "compressore",
       icon: Wind,
       color: "from-teal-500 to-emerald-500",
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-primary">{r.letturaFinale ?? "—"} bar</p>
+                    <p className="text-sm font-semibold text-primary">{r.letturaFinale ?? "—"} h</p>
                     <p className="text-xs text-muted-foreground">
                       {(r.mono ?? 0) + (r.bibo ?? 0)} bombole
                     </p>
