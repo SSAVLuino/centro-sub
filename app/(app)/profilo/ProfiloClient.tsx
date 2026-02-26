@@ -41,7 +41,7 @@ const TABS = [
 export default function ProfiloClient({
   user, socio, ricaricheCount, bombole,
 }: {
-  user: SupabaseUser; socio: Socio | null; ricaricheCount: number
+  user: SupabaseUser; socio: Socio | null; ricaricheCount: number; bombole: Bombola[]
 }) {
   const [activeTab, setActiveTab]                 = useState("dati")
   const [showPasswordModal, setShowPasswordModal] = useState(false)
