@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react"
 import { X, Loader2, Plus, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import type { Noleggio, Inventario, Socio } from "@/types/database"
+import type { Noleggio, Inventario } from "@/types/database"
+
+type SocioBasic = { id: number; Nome: string | null; Cognome: string | null }
 
 interface Props {
   onClose: () => void
@@ -14,7 +16,7 @@ export default function NoleggioModal({ onClose, onSaved }: Props) {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [soci, setSoci] = useState<Socio[]>([])
+  const [soci, setSoci] = useState<SocioBasic[]>([])
   const [inventario, setInventario] = useState<Inventario[]>([])
   const [selectedMateriali, setSelectedMateriali] = useState<{ id: number; quantita: number }[]>([])
   const [searchInventario, setSearchInventario] = useState("")
