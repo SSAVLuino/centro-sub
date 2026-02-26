@@ -345,17 +345,19 @@ function FotoPreview({ foto, nome }: { foto: string; nome: string | null }) {
 
   if (!signedUrl) {
     return (
-      <div className="w-full h-40 bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
+      <div className="w-full h-64 bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
         <Camera className="w-8 h-8" />
       </div>
     )
   }
 
   return (
-    <img
-      src={signedUrl}
-      alt={nome ?? "Asset"}
-      className="w-full h-auto object-cover max-h-80"
-    />
+    <div className="flex justify-center py-4 bg-secondary/10">
+      <img
+        src={signedUrl}
+        alt={nome ?? "Asset"}
+        className="h-64 object-contain"
+      />
+    </div>
   )
 }
