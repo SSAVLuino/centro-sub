@@ -140,7 +140,7 @@ export type Noleggio = {
   "Data Restituzione": string | null
   "Stato": "Attivo" | "Completato" | "Scaduto"
   "Note": string | null
-  AT_Soci?: Pick<Socio, "id" | "Nome" | "Cognome">
+  BP_soci?: Pick<Socio, "id" | "Nome" | "Cognome">
 }
 
 export type NoleggioDettaglio = {
