@@ -179,7 +179,7 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel overlay */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-2xl bg-white shadow-2xl overflow-y-auto">
+      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-4xl bg-white shadow-2xl overflow-y-auto">
         {/* Header sticky */}
         <div className="sticky top-0 z-10 bg-white border-b border-border p-6 flex items-center justify-between">
           <div>
