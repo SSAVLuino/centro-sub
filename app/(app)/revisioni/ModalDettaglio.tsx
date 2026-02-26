@@ -38,6 +38,8 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
     "Centro Revisione": revisione["Centro Revisione"],
     "Costo Revisione": revisione["Costo Revisione"].toString(),
     "Arrotondamento": revisione["Arrotondamento"].toString(),
+    "Stato": revisione["Stato"],
+    "Data Revisione terminata": revisione["Data Revisione terminata"] || "",
   })
   const supabase = createClient()
 
@@ -72,9 +74,27 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
   })
 
   async function handleSaveTestata() {
+    // Validazione: se stato è "Tornate", data revisione terminata è obbligatoria
+    if (formTestata["Stato"] === "Tornate" && !formTestata["Data Revisione terminata"]) {
+      setError("La data di revisione terminata è obbligatoria quando lo stato è 'Tornate'")
+      return
+    }
+
     setSaving(true)
     setError(null)
     try {
+      // Se passa a "Tornate", aggiorna tutte le bombole con stato "In Attesa" a "OK"
+      if (formTestata["Stato"] === "Tornate" && revisione["Stato"] !== "Tornate") {
+        const { error: updateErr } = await supabase
+          .from("AT_Revisioni_Dettaglio")
+          .update({ "Stato Rev": "OK" })
+          .eq("Revisione", revisione.id)
+          .eq("Stato Rev", "In Attesa")
+
+        if (updateErr) throw updateErr
+      }
+
+      // Aggiorna la testata
       const { error: err } = await supabase
         .from("AT_Revisioni")
         .update({
@@ -84,11 +104,14 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
           "Centro Revisione": formTestata["Centro Revisione"],
           "Costo Revisione": parseFloat(formTestata["Costo Revisione"]),
           "Arrotondamento": parseFloat(formTestata["Arrotondamento"]),
+          "Stato": formTestata["Stato"],
+          "Data Revisione terminata": formTestata["Data Revisione terminata"] || null,
         })
         .eq("id", revisione.id)
 
       if (err) throw err
       setShowEditTestata(false)
+      await loadDettagli()
       onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore nel salvataggio")
@@ -322,6 +345,31 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
                     className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Stato</label>
+                  <select
+                    value={formTestata["Stato"]}
+                    onChange={e => setFormTestata({...formTestata, "Stato": e.target.value})}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="Da preparare">Da preparare</option>
+                    <option value="Pronte">Pronte</option>
+                    <option value="Partite">Partite</option>
+                    <option value="Tornate">Tornate</option>
+                  </select>
+                </div>
+                {formTestata["Stato"] === "Tornate" && (
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Data Revisione Terminata *</label>
+                    <input
+                      type="date"
+                      value={formTestata["Data Revisione terminata"]}
+                      onChange={e => setFormTestata({...formTestata, "Data Revisione terminata": e.target.value})}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                    <p className="text-xs text-amber-600 mt-1">Campo obbligatorio per passare a "Tornate"</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
