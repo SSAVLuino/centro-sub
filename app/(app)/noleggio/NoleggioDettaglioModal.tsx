@@ -24,7 +24,7 @@ export default function NoleggioDettaglioModal({ noleggio, dettagli, onClose, on
   }
 
   function getNomeSocio(): string {
-    const socio = noleggio.AT_Soci
+    const socio = noleggio.BP_soci
     if (!socio) return "—"
     return `${socio.Nome} ${socio.Cognome}`
   }

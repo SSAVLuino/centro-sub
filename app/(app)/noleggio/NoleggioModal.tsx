@@ -37,7 +37,7 @@ export default function NoleggioModal({ onClose, onSaved }: Props) {
   async function loadData() {
     try {
       const [{ data: sociData, error: sociErr }, { data: inventarioData, error: invErr }] = await Promise.all([
-        supabase.from("AT_Soci").select("id, Nome, Cognome"),
+        supabase.from("BP_soci").select("id, Nome, Cognome"),
         supabase
           .from("AT_Inventario")
           .select("*")

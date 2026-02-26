@@ -43,7 +43,7 @@ export default function NoleggioClient({ noleggi: initialNoleggi, dettagli: init
   }
 
   function getNomeSocio(noleggio: Noleggio): string {
-    const socio = noleggio.AT_Soci
+    const socio = noleggio.BP_soci
     if (!socio) return "—"
     return `${socio.Nome} ${socio.Cognome}`
   }
