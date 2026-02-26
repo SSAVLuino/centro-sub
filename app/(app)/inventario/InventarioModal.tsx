@@ -36,6 +36,7 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
     "Data Distruzione": item?.["Data Distruzione"] ?? "",
     "Data Ultimo Controllo": item?.["Data Ultimo Controllo"] ?? "",
     "Quantità": item?.["Quantità"]?.toString() ?? "",
+    "Noleggiabile": item?.["Noleggiabile"] ?? false,
   })
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -99,6 +100,7 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
         "Data Distruzione": form["Distrutto"] ? form["Data Distruzione"] || null : null,
         "Data Ultimo Controllo": form["Data Ultimo Controllo"] || null,
         "Quantità": form["Quantità"] ? parseInt(form["Quantità"]) : null,
+        "Noleggiabile": form["Noleggiabile"],
       }
 
       const { data: result, error: err } = item
@@ -256,6 +258,16 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
                 className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
               />
             </div>
+
+            <label className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-white cursor-pointer hover:bg-secondary transition-all">
+              <input
+                type="checkbox"
+                checked={form["Noleggiabile"]}
+                onChange={e => setForm({...form, "Noleggiabile": e.target.checked})}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-sm font-medium">Disponibile per noleggio</span>
+            </label>
           </div>
 
           {/* Stato */}
