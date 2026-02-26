@@ -29,7 +29,7 @@ type Bombola = {
   Dismessa: boolean | null
   Nota: string | null
 }
-const AVATAR_BASE_URL   = process.env.NEXT_PUBLIC_AVATAR_BASE_URL ?? ""
+const AVATAR_BASE_URL = process.env.NEXT_PUBLIC_AVATAR_BASE_URL ?? ""
 
 const TABS = [
   { id: "dati",        label: "Dati",        icon: User },
@@ -610,11 +610,7 @@ function TabCertificati({ socioId }: { socioId: number }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {cert.PDF && (
-                    <a href={`${CERT_BASE_URL}${cert.PDF}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-xl hover:bg-secondary transition-all text-muted-foreground hover:text-foreground" title="Apri PDF">
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  )}
+                  {cert.PDF && <PdfLink path={cert.PDF} />}
                   <button onClick={() => handleDelete(cert)} disabled={deleting === cert.id} className="p-2 rounded-xl hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500" title="Elimina">
                     {deleting === cert.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </button>
