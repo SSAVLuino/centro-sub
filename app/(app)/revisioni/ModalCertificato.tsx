@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X, Loader2, FileText } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useSignedUrl } from "@/lib/useSignedUrl"
 import type { RevisioneBombola } from "@/types/database"
 
 interface Props {
