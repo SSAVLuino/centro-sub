@@ -69,8 +69,8 @@ export default function Sidebar({ userRole }: { userRole: UserRole }) {
               <Waves className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-bold text-sm leading-none" style={{ fontFamily: "'Syne', sans-serif" }}>Centro Sub</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Gestionale</p>
+              <p className="font-bold text-sm leading-none" style={{ fontFamily: "'Syne', sans-serif" }}>SSAV Luino</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Web APP</p>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function Sidebar({ userRole }: { userRole: UserRole }) {
           <div className="w-8 h-8 rounded-lg ocean-gradient flex items-center justify-center shadow-sm">
             <Waves className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold text-sm" style={{ fontFamily: "'Syne', sans-serif" }}>Centro Sub</span>
+          <span className="font-bold text-sm" style={{ fontFamily: "'Syne', sans-serif" }}>SSAV Luino</span>
         </div>
         <button onClick={() => setMobileOpen(v => !v)}
           className="p-2 rounded-xl hover:bg-secondary transition-all">
