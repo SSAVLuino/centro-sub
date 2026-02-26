@@ -36,18 +36,31 @@ export default function NoleggioModal({ onClose, onSaved }: Props) {
 
   async function loadData() {
     try {
-      const [{ data: sociData }, { data: inventarioData }] = await Promise.all([
-        supabase.from("AT_Soci").select("id, Nome, Cognome").eq("Attivo", true),
+      const [{ data: sociData, error: sociErr }, { data: inventarioData, error: invErr }] = await Promise.all([
+        supabase.from("AT_Soci").select("id, Nome, Cognome"),
         supabase
           .from("AT_Inventario")
           .select("*")
-          .eq("Noleggiabile", true)
-          .eq("Dismessa", false),
+          .eq("Noleggiabile", true),
       ])
+
+      console.log("Soci caricati:", sociData, "Errore:", sociErr)
+      console.log("Inventario caricato:", inventarioData, "Errore:", invErr)
+
+      if (sociErr) throw sociErr
+      if (invErr) throw invErr
 
       setSoci(sociData ?? [])
       setInventario(inventarioData ?? [])
+      
+      if (!sociData || sociData.length === 0) {
+        console.warn("Nessun socio trovato")
+      }
+      if (!inventarioData || inventarioData.length === 0) {
+        console.warn("Nessun materiale noleggiabile trovato")
+      }
     } catch (err) {
+      console.error("Errore caricamento:", err)
       setError(err instanceof Error ? err.message : "Errore nel caricamento")
     } finally {
       setLoading(false)
