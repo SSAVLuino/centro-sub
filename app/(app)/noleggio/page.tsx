@@ -13,7 +13,7 @@ export default async function NoleggioPage() {
 
   const { data: noleggi } = await supabase
     .from("AT_Noleggi")
-    .select("*, AT_Soci(id, Nome, Cognome)")
+    .select("*, BP_Soci(id, Nome, Cognome)")
     .order("created_at", { ascending: false })
 
   const { data: dettagli } = await supabase
