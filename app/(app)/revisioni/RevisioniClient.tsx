@@ -233,7 +233,6 @@ function StatCard({ label, value, color }: { label: string; value: number; color
 }
 
 function CertificatoLink({ path }: { path: string }) {
-  const { useSignedUrl } = require("@/lib/useSignedUrl")
   const signedUrl = useSignedUrl("Revisioni", path)
   
   if (!signedUrl) {
