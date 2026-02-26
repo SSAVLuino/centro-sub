@@ -23,7 +23,6 @@ export default async function BombolePage() {
     supabase
       .from("BP_soci")
       .select("id, Nome, Cognome")
-      .eq("Attivo", true)
       .order("Cognome"),
   ])
 
