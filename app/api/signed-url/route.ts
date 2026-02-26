@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
 // Bucket privati supportati
-const ALLOWED_BUCKETS = ["Bombole", "Certificati", "Revisioni"]
+const ALLOWED_BUCKETS = ["Bombole", "Certificati", "Revisioni", "Inventario"]
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
