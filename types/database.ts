@@ -110,3 +110,22 @@ export type RevisioneBombolaDettaglio = {
   "Stato Rev": "In Attesa" | "OK" | "Bocciata"
   "Pagato": boolean
 }
+
+export type Inventario = {
+  id: number
+  created_at: string
+  "Data Ingresso": string | null
+  "Nome": string | null
+  "Descrizione": string | null
+  "Posizione": string | null
+  "Categoria": string | null
+  "Note": string | null
+  "Foto": string | null
+  "Stato": string | null
+  "Valore Iniziale": number | null
+  "Valore Attuale": number | null
+  "Distrutto": boolean | null
+  "Data Distruzione": string | null
+  "Data Ultimo Controllo": string | null
+  "Quantità": number | null
+}
