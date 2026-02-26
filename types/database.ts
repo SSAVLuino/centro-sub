@@ -69,6 +69,25 @@ export type Certificato = {
   PDF: string | null
 }
 
+export type Bombola = {
+  id: number
+  created_at: string
+  Proprietario: number | null
+  Matricola: string
+  Codice: number | null
+  Etichetta: string | null
+  Volume: string
+  Marca: string | null
+  Attacco: string | null
+  Rubinetto: string | null
+  Nota: string | null
+  Materiale: string | null
+  Foto: string | null
+  "Stato Revisione": string | null
+  Dismessa: boolean | null
+  "Ultima Revisione": string | null
+}
+
 export type RevisioneBombola = {
   id: number
   created_at: string
