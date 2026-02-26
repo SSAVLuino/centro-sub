@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { X, Loader2, Camera } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useSignedUrl } from "@/lib/useSignedUrl"
 import type { UserRole } from "@/lib/roles-client"
 import type { Inventario } from "@/types/database"
 
@@ -124,8 +125,8 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] my-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 pt-8 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col">
         <div className="p-6 border-b border-border flex items-center justify-between shrink-0">
           <h2 className="text-xl font-bold">{item ? "Modifica Asset" : "Nuovo Asset"}</h2>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary transition-all">
@@ -133,7 +134,14 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+        <div className="p-6 overflow-y-auto flex-1 space-y-4 max-h-[calc(100vh-200px)]">
+          {/* Foto Preview */}
+          {item?.["Foto"] && !fotoFile && (
+            <div className="rounded-2xl overflow-hidden border border-border">
+              <FotoPreview foto={item["Foto"]} nome={item["Nome"]} />
+            </div>
+          )}
+
           {/* Foto */}
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Foto</label>
@@ -329,5 +337,25 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
         </div>
       </div>
     </div>
+  )
+}
+
+function FotoPreview({ foto, nome }: { foto: string; nome: string | null }) {
+  const signedUrl = useSignedUrl("Inventario", foto)
+
+  if (!signedUrl) {
+    return (
+      <div className="w-full h-40 bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
+        <Camera className="w-8 h-8" />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={signedUrl}
+      alt={nome ?? "Asset"}
+      className="w-full h-auto object-cover max-h-80"
+    />
   )
 }
