@@ -18,7 +18,7 @@ export default async function RevisioniPage() {
       .order("Date collaudo", { ascending: false }),
     supabase
       .from("AT_Bombole")
-      .select("id, Matricola, Etichetta, Proprietario, Volume, Ultima Revisione, Dismessa")
+      .select("id, Matricola, Etichetta, Proprietario, Volume, \"Ultima Revisione\", Dismessa")
       .eq("Dismessa", false)
       .order("Matricola"),
   ])
