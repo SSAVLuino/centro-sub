@@ -349,7 +349,7 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
                   <label className="block text-xs font-medium mb-1">Stato</label>
                   <select
                     value={formTestata["Stato"]}
-                    onChange={e => setFormTestata({...formTestata, "Stato": e.target.value})}
+                    onChange={e => setFormTestata({...formTestata, "Stato": e.target.value as "Da preparare" | "Pronte" | "Partite" | "Tornate"})}
                     className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="Da preparare">Da preparare</option>
