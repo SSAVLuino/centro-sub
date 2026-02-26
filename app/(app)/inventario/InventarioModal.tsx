@@ -1,375 +1,279 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { X, Loader2, Camera } from "lucide-react"
+import { useState } from "react"
+import { Plus, Search, Eye, Trash2, Loader2, Filter, Image } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 import { useSignedUrl } from "@/lib/useSignedUrl"
+import { canAccess } from "@/lib/roles-client"
 import type { UserRole } from "@/lib/roles-client"
 import type { Inventario } from "@/types/database"
+import InventarioModal from "./InventarioModal"
 
 interface Props {
-  item: Inventario | null
-  onClose: () => void
-  onSaved: (item: Inventario) => void
+  inventario: Inventario[]
   userRole: UserRole
 }
 
-export default function InventarioModal({ item, onClose, onSaved, userRole }: Props) {
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [fotoFile, setFotoFile] = useState<File | null>(null)
-  const [fotoPreview, setFotoPreview] = useState<string | null>(item?.["Foto"] ? "Foto caricata" : null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
-
-  const [form, setForm] = useState({
-    "Data Ingresso": item?.["Data Ingresso"] ?? "",
-    "Nome": item?.["Nome"] ?? "",
-    "Descrizione": item?.["Descrizione"] ?? "",
-    "Posizione": item?.["Posizione"] ?? "",
-    "Categoria": item?.["Categoria"] ?? "",
-    "Note": item?.["Note"] ?? "",
-    "Stato": item?.["Stato"] ?? "Attivo",
-    "Valore Iniziale": item?.["Valore Iniziale"]?.toString() ?? "",
-    "Valore Attuale": item?.["Valore Attuale"]?.toString() ?? "",
-    "Distrutto": item?.["Distrutto"] ?? false,
-    "Data Distruzione": item?.["Data Distruzione"] ?? "",
-    "Data Ultimo Controllo": item?.["Data Ultimo Controllo"] ?? "",
-    "Quantità": item?.["Quantità"]?.toString() ?? "",
-    "Noleggiabile": item?.["Noleggiabile"] ?? false,
-  })
-
-  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith("image/")) {
-      setError("Seleziona un file immagine")
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("L'immagine non può superare i 5MB")
-      return
-    }
-    setFotoFile(file)
-    setFotoPreview(file.name)
-    setError(null)
-  }
-
-  async function handleSave() {
-    if (!form["Nome"]) {
-      setError("Il nome è obbligatorio")
-      return
-    }
-
-    setSaving(true)
-    setError(null)
-
-    try {
-      let fotoPath = item?.["Foto"] ?? null
-
-      // Carica foto se selezionata
-      if (fotoFile) {
-        const ext = fotoFile.name.split(".").pop()?.toLowerCase() ?? "jpg"
-        const fileName = `asset_${item?.id || Date.now()}_${Date.now()}.${ext}`
-
-        const { error: uploadErr } = await supabase.storage
-          .from("Inventario")
-          .upload(fileName, fotoFile, { upsert: true, contentType: fotoFile.type })
-
-        if (uploadErr) throw uploadErr
-        fotoPath = fileName
-
-        // Elimina vecchia foto se esiste
-        if (item?.["Foto"] && item["Foto"] !== fileName) {
-          await supabase.storage.from("Inventario").remove([item["Foto"]])
-        }
-      }
-
-      const payload: any = {
-        "Data Ingresso": form["Data Ingresso"] || null,
-        "Nome": form["Nome"],
-        "Descrizione": form["Descrizione"] || null,
-        "Posizione": form["Posizione"] || null,
-        "Categoria": form["Categoria"] || null,
-        "Note": form["Note"] || null,
-        "Foto": fotoPath,
-        "Stato": form["Stato"],
-        "Valore Iniziale": form["Valore Iniziale"] ? parseInt(form["Valore Iniziale"]) : null,
-        "Valore Attuale": form["Valore Attuale"] ? parseInt(form["Valore Attuale"]) : null,
-        "Distrutto": form["Distrutto"],
-        "Data Distruzione": form["Distrutto"] ? form["Data Distruzione"] || null : null,
-        "Data Ultimo Controllo": form["Data Ultimo Controllo"] || null,
-        "Quantità": form["Quantità"] ? parseInt(form["Quantità"]) : null,
-        "Noleggiabile": form["Noleggiabile"],
-      }
-
-      const { data: result, error: err } = item
-        ? await supabase
-            .from("AT_Inventario")
-            .update(payload)
-            .eq("id", item.id)
-            .select()
-            .single()
-        : await supabase
-            .from("AT_Inventario")
-            .insert([payload])
-            .select()
-            .single()
-
-      if (err) throw err
-
-      onSaved(result)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Errore sconosciuto")
-    } finally {
-      setSaving(false)
-    }
-  }
-
+// ── Foto Asset con signed URL ───────────────────────────────────────────────
+function FotoAsset({ foto, nome }: { foto: string; nome: string | null }) {
+  const url = useSignedUrl("Inventario", foto)
+  if (!url) return (
+    <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
+      <Image className="w-5 h-5" />
+    </div>
+  )
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 pt-8 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col">
-        <div className="p-6 border-b border-border flex items-center justify-between shrink-0">
-          <h2 className="text-xl font-bold">{item ? "Modifica Asset" : "Nuovo Asset"}</h2>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary transition-all">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <img
+      src={url}
+      alt={nome ?? "Asset"}
+      className="w-12 h-12 rounded-lg object-cover border border-border"
+    />
+  )
+}
 
-        <div className="p-6 overflow-y-auto flex-1 space-y-4 max-h-[calc(100vh-200px)]">
-          {/* Foto Preview */}
-          {item?.["Foto"] && !fotoFile && (
-            <div className="rounded-2xl overflow-hidden border border-border">
-              <FotoPreview foto={item["Foto"]} nome={item["Nome"]} />
-            </div>
-          )}
-
-          {/* Foto */}
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Foto</label>
-            <div className="flex items-center gap-4">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-24 h-24 rounded-2xl border-2 border-dashed border-border hover:border-primary/40 cursor-pointer transition-all overflow-hidden bg-secondary/30 flex items-center justify-center shrink-0"
-              >
-                {fotoPreview ? (
-                  <span className="text-xs text-center px-2">{fotoPreview}</span>
-                ) : (
-                  <Camera className="w-8 h-8 text-muted-foreground" />
-                )}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <p>Clicca per caricare una foto</p>
-                <p className="text-xs mt-0.5">JPG, PNG, WEBP · Max 5MB</p>
-              </div>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
-            </div>
-          </div>
-
-          {/* Dati principali */}
-          <div className="bg-secondary/30 rounded-2xl border border-border p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Informazioni</h3>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Nome *</label>
-              <input
-                type="text"
-                value={form["Nome"]}
-                onChange={e => setForm({...form, "Nome": e.target.value})}
-                className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Descrizione</label>
-              <textarea
-                value={form["Descrizione"]}
-                onChange={e => setForm({...form, "Descrizione": e.target.value})}
-                rows={2}
-                className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Categoria</label>
-                <input
-                  type="text"
-                  value={form["Categoria"]}
-                  onChange={e => setForm({...form, "Categoria": e.target.value})}
-                  placeholder="Es: Attrezzatura, Arredamento..."
-                  className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Posizione</label>
-                <input
-                  type="text"
-                  value={form["Posizione"]}
-                  onChange={e => setForm({...form, "Posizione": e.target.value})}
-                  placeholder="Es: Magazzino, Sala..."
-                  className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Note</label>
-              <textarea
-                value={form["Note"]}
-                onChange={e => setForm({...form, "Note": e.target.value})}
-                rows={2}
-                className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Valori */}
-          <div className="bg-secondary/30 rounded-2xl border border-border p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valori (in centesimi €)</h3>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Valore Iniziale €</label>
-                <input
-                  type="number"
-                  value={form["Valore Iniziale"]}
-                  onChange={e => setForm({...form, "Valore Iniziale": e.target.value})}
-                  className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Valore Attuale €</label>
-                <input
-                  type="number"
-                  value={form["Valore Attuale"]}
-                  onChange={e => setForm({...form, "Valore Attuale": e.target.value})}
-                  className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Quantità</label>
-              <input
-                type="number"
-                value={form["Quantità"]}
-                onChange={e => setForm({...form, "Quantità": e.target.value})}
-                className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-              />
-            </div>
-
-            <label className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-white cursor-pointer hover:bg-secondary transition-all">
-              <input
-                type="checkbox"
-                checked={form["Noleggiabile"]}
-                onChange={e => setForm({...form, "Noleggiabile": e.target.checked})}
-                className="w-4 h-4 rounded"
-              />
-              <span className="text-sm font-medium">Disponibile per noleggio</span>
-            </label>
-          </div>
-
-          {/* Stato */}
-          <div className="bg-secondary/30 rounded-2xl border border-border p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stato</h3>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Stato</label>
-              <input
-                type="text"
-                value={form["Stato"]}
-                onChange={e => setForm({...form, "Stato": e.target.value})}
-                placeholder="Es: Attivo, Manutenzione..."
-                className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Data Ultimo Controllo</label>
-              <input
-                type="date"
-                value={form["Data Ultimo Controllo"]}
-                onChange={e => setForm({...form, "Data Ultimo Controllo": e.target.value})}
-                className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-              />
-            </div>
-
-            <label className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-white cursor-pointer hover:bg-secondary transition-all">
-              <input
-                type="checkbox"
-                checked={form["Distrutto"]}
-                onChange={e => setForm({...form, "Distrutto": e.target.checked})}
-                className="w-4 h-4 rounded"
-              />
-              <span className="text-sm font-medium">Asset distrutto</span>
-            </label>
-
-            {form["Distrutto"] && (
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Data Distruzione</label>
-                <input
-                  type="date"
-                  value={form["Data Distruzione"]}
-                  onChange={e => setForm({...form, "Data Distruzione": e.target.value})}
-                  className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Data Ingresso</label>
-              <input
-                type="date"
-                value={form["Data Ingresso"]}
-                onChange={e => setForm({...form, "Data Ingresso": e.target.value})}
-                className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-              />
-            </div>
-          </div>
-
-          {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>}
-        </div>
-
-        <div className="p-6 border-t border-border flex gap-3 justify-end shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all"
-          >
-            Annulla
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="ocean-gradient text-white px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-60 flex items-center gap-2"
-          >
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {saving ? "Salvo..." : item ? "Aggiorna" : "Salva"}
-          </button>
-        </div>
-      </div>
+// ── Stat Card ───────────────────────────────────────────────────────────────
+function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-border">
+      <p className="text-xs text-muted-foreground font-medium mb-1">{label}</p>
+      <p className={`text-2xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}>{value}</p>
     </div>
   )
 }
 
-function FotoPreview({ foto, nome }: { foto: string; nome: string | null }) {
-  const signedUrl = useSignedUrl("Inventario", foto)
+export default function InventarioClient({ inventario: initialInventario, userRole }: Props) {
+  const [inventario, setInventario] = useState<Inventario[]>(initialInventario)
+  const [search, setSearch] = useState("")
+  const [showModal, setShowModal] = useState(false)
+  const [editItem, setEditItem] = useState<Inventario | null>(null)
+  const [filterCategoria, setFilterCategoria] = useState("")
+  const [filterStato, setFilterStato] = useState("")
+  const [deleting, setDeleting] = useState<number | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
+  const router = useRouter()
+  const supabase = createClient()
 
-  if (!signedUrl) {
-    return (
-      <div className="w-full h-64 bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
-        <Camera className="w-8 h-8" />
-      </div>
-    )
+  async function handleDelete(id: number) {
+    if (confirmDelete !== id) {
+      setConfirmDelete(id)
+      return
+    }
+    setDeleting(id)
+    const { error } = await supabase.from("AT_Inventario").delete().eq("id", id)
+    if (!error) {
+      setInventario(prev => prev.filter(i => i.id !== id))
+      setConfirmDelete(null)
+    }
+    setDeleting(null)
+  }
+
+  function formatDate(d: string | null) {
+    if (!d) return "—"
+    return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })
+  }
+
+  const filtered = inventario.filter(i => {
+    const q = search.toLowerCase()
+    const matchSearch = !q || 
+      (i["Nome"] ?? "").toLowerCase().includes(q) ||
+      (i["Descrizione"] ?? "").toLowerCase().includes(q) ||
+      (i["Posizione"] ?? "").toLowerCase().includes(q)
+    
+    const matchCategoria = !filterCategoria || i["Categoria"] === filterCategoria
+    const matchStato = !filterStato || i["Stato"] === filterStato
+    
+    return matchSearch && matchCategoria && matchStato
+  })
+
+  const categorie = [...new Set(inventario.map(i => i["Categoria"]).filter((c): c is string => !!c))]
+  const stati = [...new Set(inventario.map(i => i["Stato"]).filter((s): s is string => !!s))]
+
+  const stats = {
+    totale: inventario.length,
+    attivo: inventario.filter(i => !i["Distrutto"]).length,
+    distrutto: inventario.filter(i => i["Distrutto"]).length,
+    valore: inventario.reduce((sum, i) => sum + (i["Valore Attuale"] || 0), 0),
   }
 
   return (
-    <div className="flex justify-center py-4 bg-secondary/10">
-      <img
-        src={signedUrl}
-        alt={nome ?? "Asset"}
-        className="h-64 object-contain"
-      />
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Inventario</h1>
+          <p className="text-muted-foreground mt-1">Gestione asset del club</p>
+        </div>
+        {canAccess("Consiglio", userRole) && (
+          <button
+            onClick={() => { setEditItem(null); setShowModal(true) }}
+            className="ocean-gradient text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md hover:opacity-90 transition-all"
+          >
+            <Plus className="w-4 h-4" /> Nuovo Asset
+          </button>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard label="Totale" value={stats.totale} color="from-blue-500 to-cyan-500" />
+        <StatCard label="Attivi" value={stats.attivo} color="from-emerald-500 to-green-500" />
+        <StatCard label="Distrutti" value={stats.distrutto} color="from-red-500 to-rose-500" />
+        <StatCard label="Valore Tot." value={`€ ${(stats.valore / 100).toFixed(0)}`} color="from-amber-500 to-orange-500" />
+      </div>
+
+      {/* Filtri e ricerca */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cerca per nome, descrizione, posizione..."
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+          />
+        </div>
+        <select
+          value={filterCategoria}
+          onChange={e => setFilterCategoria(e.target.value)}
+          className="px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+        >
+          <option value="">Tutte le categorie</option>
+          {categorie.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select
+          value={filterStato}
+          onChange={e => setFilterStato(e.target.value)}
+          className="px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+        >
+          <option value="">Tutti gli stati</option>
+          {stati.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+
+      {/* Tabella */}
+      <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary/50">
+                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Foto</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Nome</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Categoria</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Posizione</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Stato</th>
+                <th className="text-right px-5 py-3.5 font-semibold text-muted-foreground">Valore Attuale</th>
+                <th className="text-center px-5 py-3.5 font-semibold text-muted-foreground">Azioni</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-muted-foreground">
+                    {search || filterCategoria || filterStato ? "Nessun risultato per i filtri applicati." : "Nessun asset nell'inventario."}
+                  </td>
+                </tr>
+              ) : filtered.map(item => (
+                <tr key={item.id} className="hover:bg-secondary/30 transition-colors">
+                  <td className="px-5 py-3.5">
+                    {item["Foto"] ? (
+                      <FotoAsset foto={item["Foto"]} nome={item["Nome"]} />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground">
+                        <Image className="w-5 h-5" />
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5 font-medium">{item["Nome"] ?? "—"}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground text-sm">{item["Categoria"] ?? "—"}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground text-sm">{item["Posizione"] ?? "—"}</td>
+                  <td className="px-5 py-3.5">
+                    {/* FIX: se Distrutto → badge rosso, se Stato è valorizzato → badge colorato, se null → blank */}
+                    {item["Distrutto"] ? (
+                      <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-red-100 text-red-700">
+                        Distrutto
+                      </span>
+                    ) : item["Stato"] ? (
+                      <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">
+                        {item["Stato"]}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5 text-right font-medium">€ {((item["Valore Attuale"] ?? 0) / 100).toFixed(2)}</td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => { setEditItem(item); setShowModal(true) }}
+                        disabled={!canAccess("Consiglio", userRole)}
+                        className="p-2 rounded-xl hover:bg-secondary transition-all text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Modifica"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {canAccess("Consiglio", userRole) && (
+                        confirmDelete === item.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              disabled={deleting === item.id}
+                              className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-all disabled:opacity-60 flex items-center gap-1"
+                            >
+                              {deleting === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                              Conferma
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-secondary transition-all"
+                            >
+                              Annulla
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="p-2 rounded-xl hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500"
+                            title="Elimina"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length > 0 && (
+          <div className="px-5 py-3 border-t border-border bg-secondary/30 text-xs text-muted-foreground">
+            {filtered.length} {filtered.length === 1 ? "asset" : "asset"} visualizzati
+          </div>
+        )}
+      </div>
+
+      {showModal && (
+        <InventarioModal
+          item={editItem}
+          onClose={() => { setShowModal(false); setEditItem(null) }}
+          onSaved={(saved) => {
+            setInventario(prev => {
+              const idx = prev.findIndex(i => i.id === saved.id)
+              if (idx >= 0) {
+                const next = [...prev]
+                next[idx] = saved
+                return next
+              }
+              return [saved, ...prev]
+            })
+            setShowModal(false)
+            setEditItem(null)
+            router.refresh()
+          }}
+          userRole={userRole}
+        />
+      )}
     </div>
   )
 }
