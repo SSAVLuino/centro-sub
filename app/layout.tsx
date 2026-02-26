@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Centro Sub — Gestionale",
+  title: "SSAV — Gestionale",
   description: "Gestionale per centro sub: soci e compressore",
 }
 
