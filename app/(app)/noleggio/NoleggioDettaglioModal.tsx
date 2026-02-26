@@ -60,8 +60,8 @@ export default function NoleggioDettaglioModal({ noleggio, dettagli, onClose, on
   const isCompleted = noleggio["Stato"] === "Completato"
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 pt-8 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] my-auto">
         <div className="p-6 border-b border-border flex items-center justify-between shrink-0">
           <div>
             <h2 className="text-xl font-bold">Dettaglio Noleggio</h2>

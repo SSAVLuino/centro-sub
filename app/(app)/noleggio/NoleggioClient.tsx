@@ -81,7 +81,7 @@ export default function NoleggioClient({ noleggi: initialNoleggi, dettagli: init
   }
 
   return (
-    <div className="space-y-6 animate-fade-in pt-20 md:pt-0">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Noleggi</h1>
