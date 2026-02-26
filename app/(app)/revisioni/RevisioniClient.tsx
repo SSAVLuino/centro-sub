@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Plus, Search, Eye, Trash2, Loader2, Upload, FileText, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useSignedUrl } from "@/lib/useSignedUrl"
 import type { UserRole } from "@/lib/roles-client"
 import type { RevisioneBombola, Bombola } from "@/types/database"
 import ModalNuovaRevisione from "./ModalNuovaRevisione"
@@ -139,15 +140,7 @@ export default function RevisioniClient({ revisioni: initialRevisioni, bombole, 
                     <td className="px-5 py-3.5 text-right font-medium">€ {prezzoUnitario}</td>
                     <td className="px-5 py-3.5 text-center">
                       {r["Certificato"] ? (
-                        <a 
-                          href={`${process.env.NEXT_PUBLIC_REVISIONI_BASE_URL}${r["Certificato"]}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
-                          title="Scarica certificato"
-                        >
-                          <FileText className="w-3.5 h-3.5" /> PDF
-                        </a>
+                        <CertificatoLink path={r["Certificato"]} />
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
@@ -236,5 +229,26 @@ function StatCard({ label, value, color }: { label: string; value: number; color
         <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} opacity-20`}></div>
       </div>
     </div>
+  )
+}
+
+function CertificatoLink({ path }: { path: string }) {
+  const { useSignedUrl } = require("@/lib/useSignedUrl")
+  const signedUrl = useSignedUrl("Revisioni", path)
+  
+  if (!signedUrl) {
+    return <span className="text-xs text-muted-foreground animate-pulse">Caricamento...</span>
+  }
+
+  return (
+    <a
+      href={signedUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
+      title="Scarica certificato"
+    >
+      <FileText className="w-3.5 h-3.5" /> PDF
+    </a>
   )
 }
