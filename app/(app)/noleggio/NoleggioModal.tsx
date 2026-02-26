@@ -60,8 +60,9 @@ export default function NoleggioModal({ onClose, onSaved }: Props) {
         console.warn("Nessun materiale noleggiabile trovato")
       }
     } catch (err) {
-      console.error("Errore caricamento:", err)
-      setError(err instanceof Error ? err.message : "Errore nel caricamento")
+      const errorMsg = err instanceof Error ? err.message : JSON.stringify(err)
+      console.error("Errore caricamento completo:", errorMsg, err)
+      setError(`Errore: ${errorMsg}`)
     } finally {
       setLoading(false)
     }
