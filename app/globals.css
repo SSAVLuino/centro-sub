@@ -6,23 +6,35 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 210 40% 8%;
+    /* Base */
+    --background: 220 40% 99%;
+    --foreground: 225 35% 15%;
+
     --card: 0 0% 100%;
-    --card-foreground: 210 40% 8%;
-    --primary: 199 89% 36%;
+    --card-foreground: 225 35% 15%;
+
+    /* Blu pastello (primary) */
+    --primary: 228 55% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 20% 94%;
-    --secondary-foreground: 210 40% 20%;
-    --muted: 210 20% 94%;
-    --muted-foreground: 210 20% 45%;
-    --accent: 174 72% 42%;
+
+    /* Grigi soft */
+    --secondary: 225 25% 95%;
+    --secondary-foreground: 225 30% 25%;
+
+    --muted: 225 25% 95%;
+    --muted-foreground: 225 20% 50%;
+
+    /* Rosso pastello (accent) */
+    --accent: 3 55% 65%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+
+    --destructive: 0 65% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 199 89% 36%;
+
+    --border: 225 25% 90%;
+    --input: 225 25% 90%;
+    --ring: 228 55% 60%;
+
     --radius: 0.75rem;
   }
 
@@ -33,10 +45,19 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'DM Sans', sans-serif;
-    background-image: 
-      radial-gradient(ellipse at 20% 0%, hsl(199 89% 36% / 0.06) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 100%, hsl(174 72% 42% / 0.05) 0%, transparent 60%);
     min-height: 100vh;
+
+    background-image:
+      radial-gradient(
+        ellipse at 20% 0%,
+        hsl(228 55% 60% / 0.06) 0%,
+        transparent 65%
+      ),
+      radial-gradient(
+        ellipse at 80% 100%,
+        hsl(3 55% 65% / 0.05) 0%,
+        transparent 65%
+      );
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -51,18 +72,30 @@
   }
 
   .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
   }
 
+  /* Gradient principale soft blu → rosso */
   .ocean-gradient {
-    background: linear-gradient(135deg, hsl(199 89% 36%) 0%, hsl(174 72% 42%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(228 55% 60%) 0%,
+      hsl(228 55% 65%) 50%,
+      hsl(3 55% 65%) 100%
+    );
   }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
