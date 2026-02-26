@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search, Eye, Trash2, Loader2, Filter, Image } from "lucide-react"
+import { Plus, Search, Eye, Trash2, Loader2, Image } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useSignedUrl } from "@/lib/useSignedUrl"
@@ -13,6 +13,36 @@ import InventarioModal from "./InventarioModal"
 interface Props {
   inventario: Inventario[]
   userRole: UserRole
+}
+
+// ── Foto Asset con signed URL ───────────────────────────────────────────────
+function FotoAsset({ foto, nome }: { foto: string; nome: string | null }) {
+  const signedUrl = useSignedUrl("Inventario", foto)
+  if (!signedUrl) return (
+    <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
+      <Image className="w-5 h-5" />
+    </div>
+  )
+  return (
+    <img
+      src={signedUrl}
+      alt={nome ?? "Asset"}
+      className="w-12 h-12 rounded-lg object-cover border border-border"
+    />
+  )
+}
+
+// ── Stat Card ───────────────────────────────────────────────────────────────
+function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-border">
+      <p className="text-xs text-muted-foreground font-medium mb-2">{label}</p>
+      <div className="flex items-end justify-between">
+        <p className="text-2xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>{value}</p>
+        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} opacity-20`}></div>
+      </div>
+    </div>
+  )
 }
 
 export default function InventarioClient({ inventario: initialInventario, userRole }: Props) {
@@ -41,21 +71,14 @@ export default function InventarioClient({ inventario: initialInventario, userRo
     setDeleting(null)
   }
 
-  function formatDate(d: string | null) {
-    if (!d) return "—"
-    return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })
-  }
-
   const filtered = inventario.filter(i => {
     const q = search.toLowerCase()
-    const matchSearch = !q || 
+    const matchSearch = !q ||
       (i["Nome"] ?? "").toLowerCase().includes(q) ||
       (i["Descrizione"] ?? "").toLowerCase().includes(q) ||
       (i["Posizione"] ?? "").toLowerCase().includes(q)
-    
     const matchCategoria = !filterCategoria || i["Categoria"] === filterCategoria
     const matchStato = !filterStato || i["Stato"] === filterStato
-    
     return matchSearch && matchCategoria && matchStato
   })
 
@@ -88,13 +111,13 @@ export default function InventarioClient({ inventario: initialInventario, userRo
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Totale" value={stats.totale} color="from-blue-500 to-cyan-500" />
-        <StatCard label="Attivi" value={stats.attivo} color="from-emerald-500 to-green-500" />
-        <StatCard label="Distrutti" value={stats.distrutto} color="from-red-500 to-rose-500" />
-        <StatCard label="Valore Tot." value={`€ ${(stats.valore / 100).toFixed(0)}`} color="from-amber-500 to-orange-500" />
+        <StatCard label="Totale"      value={stats.totale}    color="from-blue-500 to-cyan-500" />
+        <StatCard label="Attivi"      value={stats.attivo}    color="from-emerald-500 to-green-500" />
+        <StatCard label="Distrutti"   value={stats.distrutto} color="from-red-500 to-rose-500" />
+        <StatCard label="Valore Tot." value={`€ ${stats.valore.toLocaleString("it-IT")}`} color="from-amber-500 to-orange-500" />
       </div>
 
-      {/* Filtri e ricerca */}
+      {/* Filtri */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -142,33 +165,35 @@ export default function InventarioClient({ inventario: initialInventario, userRo
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-muted-foreground">
-                    {search || filterCategoria || filterStato ? "Nessun risultato per i filtri applicati." : "Nessun asset nell'inventario."}
+                    {search || filterCategoria || filterStato
+                      ? "Nessun risultato per i filtri applicati."
+                      : "Nessun asset nell'inventario."}
                   </td>
                 </tr>
               ) : filtered.map(item => (
                 <tr key={item.id} className="hover:bg-secondary/30 transition-colors">
                   <td className="px-5 py-3.5">
-                    {item["Foto"] ? (
-                      <FotoAsset foto={item["Foto"]} nome={item["Nome"]} />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground">
-                        <Image className="w-5 h-5" />
-                      </div>
-                    )}
+                    {item["Foto"]
+                      ? <FotoAsset foto={item["Foto"]} nome={item["Nome"]} />
+                      : <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground"><Image className="w-5 h-5" /></div>
+                    }
                   </td>
                   <td className="px-5 py-3.5 font-medium">{item["Nome"] ?? "—"}</td>
                   <td className="px-5 py-3.5 text-muted-foreground text-sm">{item["Categoria"] ?? "—"}</td>
                   <td className="px-5 py-3.5 text-muted-foreground text-sm">{item["Posizione"] ?? "—"}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                      item["Distrutto"] 
-                        ? "bg-red-100 text-red-700" 
-                        : "bg-emerald-100 text-emerald-700"
-                    }`}>
-                      {item["Distrutto"] ? "Distrutto" : item["Stato"] ?? "Attivo"}
-                    </span>
+                    {/* FIX: stato null → blank, non "Attivo" */}
+                    {item["Distrutto"] ? (
+                      <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-red-100 text-red-700">Distrutto</span>
+                    ) : item["Stato"] ? (
+                      <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">{item["Stato"]}</span>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
                   </td>
-                  <td className="px-5 py-3.5 text-right font-medium">€ {((item["Valore Attuale"] ?? 0) / 100).toFixed(2)}</td>
+                  <td className="px-5 py-3.5 text-right font-medium">
+                    € {(item["Valore Attuale"] ?? 0).toLocaleString("it-IT")}
+                  </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-center gap-2">
                       <button
@@ -185,8 +210,9 @@ export default function InventarioClient({ inventario: initialInventario, userRo
                             <button
                               onClick={() => handleDelete(item.id)}
                               disabled={deleting === item.id}
-                              className="px-2 py-1 text-xs rounded-lg bg-red-100 text-red-700 hover:bg-red-200 font-medium transition-all disabled:opacity-50"
+                              className="px-2 py-1 text-xs rounded-lg bg-red-100 text-red-700 hover:bg-red-200 font-medium transition-all disabled:opacity-50 flex items-center gap-1"
                             >
+                              {deleting === item.id && <Loader2 className="w-3 h-3 animate-spin" />}
                               Elimina
                             </button>
                             <button
@@ -213,13 +239,18 @@ export default function InventarioClient({ inventario: initialInventario, userRo
             </tbody>
           </table>
         </div>
+        {filtered.length > 0 && (
+          <div className="px-5 py-3 border-t border-border bg-secondary/30 text-xs text-muted-foreground">
+            {filtered.length} asset visualizzati
+          </div>
+        )}
       </div>
 
       {/* Modal */}
       {showModal && (
         <InventarioModal
           item={editItem}
-          onClose={() => setShowModal(false)}
+          onClose={() => { setShowModal(false); setEditItem(null) }}
           onSaved={(newItem) => {
             if (editItem) {
               setInventario(prev => prev.map(i => i.id === newItem.id ? newItem : i))
@@ -227,43 +258,12 @@ export default function InventarioClient({ inventario: initialInventario, userRo
               setInventario(prev => [newItem, ...prev])
             }
             setShowModal(false)
+            setEditItem(null)
             router.refresh()
           }}
           userRole={userRole}
         />
       )}
     </div>
-  )
-}
-
-function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
-  return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-border">
-      <p className="text-xs text-muted-foreground font-medium mb-2">{label}</p>
-      <div className="flex items-end justify-between">
-        <p className="text-2xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>{value}</p>
-        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} opacity-20`}></div>
-      </div>
-    </div>
-  )
-}
-
-function FotoAsset({ foto, nome }: { foto: string; nome: string | null }) {
-  const signedUrl = useSignedUrl("Inventario", foto)
-
-  if (!signedUrl) {
-    return (
-      <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
-        <Image className="w-5 h-5" />
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={signedUrl}
-      alt={nome ?? "Asset"}
-      className="w-12 h-12 rounded-lg object-cover border border-border"
-    />
   )
 }
