@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search, Eye, Trash2, Loader2, Filter } from "lucide-react"
+import { Plus, Search, Eye, Trash2, Loader2, Filter, Image } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useSignedUrl } from "@/lib/useSignedUrl"
 import { canAccess } from "@/lib/roles-client"
 import type { UserRole } from "@/lib/roles-client"
 import type { Inventario } from "@/types/database"
@@ -22,14 +23,20 @@ export default function InventarioClient({ inventario: initialInventario, userRo
   const [filterCategoria, setFilterCategoria] = useState("")
   const [filterStato, setFilterStato] = useState("")
   const [deleting, setDeleting] = useState<number | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
   async function handleDelete(id: number) {
+    if (confirmDelete !== id) {
+      setConfirmDelete(id)
+      return
+    }
     setDeleting(id)
     const { error } = await supabase.from("AT_Inventario").delete().eq("id", id)
     if (!error) {
       setInventario(prev => prev.filter(i => i.id !== id))
+      setConfirmDelete(null)
     }
     setDeleting(null)
   }
@@ -122,6 +129,7 @@ export default function InventarioClient({ inventario: initialInventario, userRo
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
+                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Foto</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Nome</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Categoria</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Posizione</th>
@@ -133,12 +141,21 @@ export default function InventarioClient({ inventario: initialInventario, userRo
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-12 text-muted-foreground">
                     {search || filterCategoria || filterStato ? "Nessun risultato per i filtri applicati." : "Nessun asset nell'inventario."}
                   </td>
                 </tr>
               ) : filtered.map(item => (
                 <tr key={item.id} className="hover:bg-secondary/30 transition-colors">
+                  <td className="px-5 py-3.5">
+                    {item["Foto"] ? (
+                      <FotoAsset foto={item["Foto"]} nome={item["Nome"]} />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground">
+                        <Image className="w-5 h-5" />
+                      </div>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5 font-medium">{item["Nome"] ?? "—"}</td>
                   <td className="px-5 py-3.5 text-muted-foreground text-sm">{item["Categoria"] ?? "—"}</td>
                   <td className="px-5 py-3.5 text-muted-foreground text-sm">{item["Posizione"] ?? "—"}</td>
@@ -163,14 +180,31 @@ export default function InventarioClient({ inventario: initialInventario, userRo
                         <Eye className="w-4 h-4" />
                       </button>
                       {canAccess("Consiglio", userRole) && (
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          disabled={deleting === item.id}
-                          className="p-2 rounded-xl hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500 disabled:opacity-50"
-                          title="Elimina"
-                        >
-                          {deleting === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        </button>
+                        confirmDelete === item.id ? (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              disabled={deleting === item.id}
+                              className="px-2 py-1 text-xs rounded-lg bg-red-100 text-red-700 hover:bg-red-200 font-medium transition-all disabled:opacity-50"
+                            >
+                              Elimina
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="px-2 py-1 text-xs rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium transition-all"
+                            >
+                              Annulla
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="p-2 rounded-xl hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500"
+                            title="Elimina"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )
                       )}
                     </div>
                   </td>
@@ -211,5 +245,25 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
         <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} opacity-20`}></div>
       </div>
     </div>
+  )
+}
+
+function FotoAsset({ foto, nome }: { foto: string; nome: string | null }) {
+  const signedUrl = useSignedUrl("Inventario", foto)
+
+  if (!signedUrl) {
+    return (
+      <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center text-muted-foreground animate-pulse">
+        <Image className="w-5 h-5" />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={signedUrl}
+      alt={nome ?? "Asset"}
+      className="w-12 h-12 rounded-lg object-cover border border-border"
+    />
   )
 }
