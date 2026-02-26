@@ -30,6 +30,7 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
   const [searchBombole, setSearchBombole] = useState("")
   const [changingStato, setChangingStato] = useState<{id: number; stato: string} | null>(null)
   const [showEditTestata, setShowEditTestata] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [formTestata, setFormTestata] = useState({
     "Data Bombole pronte": revisione["Data Bombole pronte"],
     "Date collaudo": revisione["Date collaudo"],
@@ -116,6 +117,10 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
   }
 
   async function handleRemoveBombola(dettaglioId: number) {
+    if (confirmDeleteId !== dettaglioId) {
+      setConfirmDeleteId(dettaglioId)
+      return
+    }
     try {
       const { error: err } = await supabase
         .from("AT_Revisioni_Dettaglio")
@@ -123,6 +128,7 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
         .eq("id", dettaglioId)
 
       if (err) throw err
+      setConfirmDeleteId(null)
       await loadDettagli()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore nella rimozione")
@@ -245,6 +251,13 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
                     <p className="text-xs text-muted-foreground font-medium">Arrotondamento</p>
                     <p className="font-semibold text-sm">€ {revisione["Arrotondamento"].toFixed(2)}</p>
                   </div>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground font-medium">Prezzo Unitario</p>
+                  <p className="font-bold text-lg text-blue-700">
+                    € {dettagli.length > 0 ? ((revisione["Costo Revisione"] + revisione["Arrotondamento"]) / dettagli.length).toFixed(2) : "—"}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">({revisione["Costo Revisione"] + revisione["Arrotondamento"]} ÷ {dettagli.length} bombole)</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground font-medium">Stato</p>
@@ -374,12 +387,30 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
                         <p className="font-medium text-sm">{det.AT_Bombole?.Matricola}</p>
                         <p className="text-xs text-muted-foreground">{det.AT_Bombole?.Etichetta ?? "—"} • {det.AT_Bombole?.Volume}</p>
                       </div>
-                      <button
-                        onClick={() => handleRemoveBombola(det.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500 shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {confirmDeleteId === det.id ? (
+                        <div className="flex gap-1 shrink-0">
+                          <button
+                            onClick={() => handleRemoveBombola(det.id)}
+                            className="px-2 py-1 text-xs rounded-lg bg-red-100 text-red-700 hover:bg-red-200 font-medium transition-all"
+                          >
+                            Elimina
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="px-2 py-1 text-xs rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium transition-all"
+                          >
+                            Annulla
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleRemoveBombola(det.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500 shrink-0"
+                          title="Rimuovi bombola"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <select
