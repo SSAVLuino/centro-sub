@@ -128,4 +128,27 @@ export type Inventario = {
   "Data Distruzione": string | null
   "Data Ultimo Controllo": string | null
   "Quantità": number | null
+  "Noleggiabile": boolean | null
+}
+
+export type Noleggio = {
+  id: number
+  created_at: string
+  "Socio": number
+  "Data Inizio": string
+  "Data Fine Prevista": string
+  "Data Restituzione": string | null
+  "Stato": "Attivo" | "Completato" | "Scaduto"
+  "Note": string | null
+  AT_Soci?: Pick<Socio, "id" | "Nome" | "Cognome">
+}
+
+export type NoleggioDettaglio = {
+  id: number
+  created_at: string
+  "Noleggio": number
+  "Inventario": number
+  "Quantità": number
+  "Data Restituzione Effettiva": string | null
+  AT_Inventario?: Inventario
 }
