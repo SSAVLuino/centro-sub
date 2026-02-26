@@ -174,14 +174,10 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
   }
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Panel overlay */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-4xl bg-white shadow-2xl overflow-y-auto">
-        {/* Header sticky */}
-        <div className="sticky top-0 z-10 bg-white border-b border-border p-6 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl my-4">
+        {/* Header */}
+        <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-white">
           <div>
             <h2 className="text-xl font-bold">Dettaglio Revisione</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -194,7 +190,7 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
         </div>
 
         {/* Content scrollabile */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
           {/* Sezione Testata */}
           <div className="bg-secondary/30 rounded-2xl border border-border p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -338,7 +334,7 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
                   placeholder="Cerca matricola, etichetta..."
                   className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-                <div className="max-h-40 overflow-y-auto space-y-1">
+                <div className="max-h-32 overflow-y-auto space-y-1">
                   {bomboleFiltrate.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-2">Nessuna bombola disponibile</p>
                   ) : (
@@ -398,7 +394,7 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
                       </select>
                       <button
                         onClick={() => handleTogglePagato(det.id, det["Pagato"])}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all shrink-0 ${
                           det["Pagato"]
                             ? "bg-emerald-100 text-emerald-700"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -414,11 +410,18 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
           </div>
 
           {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>}
+        </div>
 
-          {/* Spacer finale */}
-          <div className="h-6" />
+        {/* Footer */}
+        <div className="p-6 border-t border-border flex gap-3 justify-end bg-white">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all"
+          >
+            Chiudi
+          </button>
         </div>
       </div>
-    </>
+    </div>
   )
 }
