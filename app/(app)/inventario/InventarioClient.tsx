@@ -52,8 +52,8 @@ export default function InventarioClient({ inventario: initialInventario, userRo
     return matchSearch && matchCategoria && matchStato
   })
 
-  const categorie = [...new Set(inventario.map(i => i["Categoria"]).filter(Boolean))]
-  const stati = [...new Set(inventario.map(i => i["Stato"]).filter(Boolean))]
+  const categorie = [...new Set(inventario.map(i => i["Categoria"]).filter((c): c is string => !!c))]
+  const stati = [...new Set(inventario.map(i => i["Stato"]).filter((s): s is string => !!s))]
 
   const stats = {
     totale: inventario.length,
