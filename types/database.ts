@@ -68,3 +68,26 @@ export type Certificato = {
   "Data scadenza": string | null
   PDF: string | null
 }
+
+export type RevisioneBombola = {
+  id: number
+  created_at: string
+  "Data Bombole pronte": string
+  "Date collaudo": string
+  "Luogo": string | null
+  "Centro Revisione": string
+  "Costo Revisione": number
+  "Arrotondamento": number
+  "Stato": "Da preparare" | "Pronte" | "Partite" | "Tornate"
+  "Certificato": string | null
+  "Data Revisione terminata": string | null
+}
+
+export type RevisioneBombolaDettaglio = {
+  id: number
+  created_at: string
+  "Revisione": number
+  "Bombola": number
+  "Stato Rev": "In Attesa" | "OK" | "Bocciata"
+  "Pagato": boolean
+}
