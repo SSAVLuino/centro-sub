@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Loader2, Trash2, Plus, Search } from "lucide-react"
+import { X, Loader2, Trash2, Plus, Search, Pencil, Check } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import type { RevisioneBombola, Bombola } from "@/types/database"
 
@@ -29,6 +29,15 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
   const [showAddBombole, setShowAddBombole] = useState(false)
   const [searchBombole, setSearchBombole] = useState("")
   const [changingStato, setChangingStato] = useState<{id: number; stato: string} | null>(null)
+  const [showEditTestata, setShowEditTestata] = useState(false)
+  const [formTestata, setFormTestata] = useState({
+    "Data Bombole pronte": revisione["Data Bombole pronte"],
+    "Date collaudo": revisione["Date collaudo"],
+    "Luogo": revisione["Luogo"] || "",
+    "Centro Revisione": revisione["Centro Revisione"],
+    "Costo Revisione": revisione["Costo Revisione"].toString(),
+    "Arrotondamento": revisione["Arrotondamento"].toString(),
+  })
   const supabase = createClient()
 
   // Carica i dettagli della sessione
@@ -65,6 +74,32 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
       b.Matricola.toLowerCase().includes(q) ||
       (b.Etichetta ?? "").toLowerCase().includes(q)
   })
+
+  async function handleSaveTestata() {
+    setSaving(true)
+    setError(null)
+    try {
+      const { error: err } = await supabase
+        .from("AT_Revisioni")
+        .update({
+          "Data Bombole pronte": formTestata["Data Bombole pronte"],
+          "Date collaudo": formTestata["Date collaudo"],
+          "Luogo": formTestata["Luogo"] || null,
+          "Centro Revisione": formTestata["Centro Revisione"],
+          "Costo Revisione": parseFloat(formTestata["Costo Revisione"]),
+          "Arrotondamento": parseFloat(formTestata["Arrotondamento"]),
+        })
+        .eq("id", revisione.id)
+
+      if (err) throw err
+      setShowEditTestata(false)
+      onSaved()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore nel salvataggio")
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function handleAddBombola(bombolaId: number) {
     try {
@@ -144,8 +179,8 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl flex flex-col mt-4 mb-4 max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col h-[95vh]">
         {/* Header */}
         <div className="p-6 border-b border-border flex items-center justify-between shrink-0">
           <div>
@@ -161,24 +196,108 @@ export default function ModalDettaglio({ revisione, bombole, onClose, onSaved }:
 
         {/* Content - scrollable */}
         <div className="p-6 overflow-y-auto flex-1 space-y-4">
-          {/* Info sessione */}
-          <div className="bg-secondary/30 rounded-2xl border border-border p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Centro Revisione</p>
-              <p className="font-semibold">{revisione["Centro Revisione"]}</p>
+          {/* Sezione Testata */}
+          <div className="bg-secondary/30 rounded-2xl border border-border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Dati Sessione</h3>
+              {!showEditTestata ? (
+                <button
+                  onClick={() => setShowEditTestata(true)}
+                  className="flex items-center gap-1.5 text-xs ocean-gradient text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-all"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Modifica
+                </button>
+              ) : (
+                <button
+                  onClick={handleSaveTestata}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 text-xs ocean-gradient text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-all disabled:opacity-60"
+                >
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  {saving ? "Salvo..." : "Salva"}
+                </button>
+              )}
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Stato</p>
-              <p className="font-semibold">{revisione["Stato"]}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Costo Totale</p>
-              <p className="font-semibold">€ {revisione["Costo Revisione"].toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground font-medium">Bombole</p>
-              <p className="font-semibold">{dettagli.length}</p>
-            </div>
+
+            {!showEditTestata ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Centro Revisione</p>
+                  <p className="font-semibold text-sm">{revisione["Centro Revisione"]}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Stato</p>
+                  <p className="font-semibold text-sm">{revisione["Stato"]}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Costo Totale</p>
+                  <p className="font-semibold text-sm">€ {revisione["Costo Revisione"].toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Bombole</p>
+                  <p className="font-semibold text-sm">{dettagli.length}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl">
+                <div>
+                  <label className="block text-xs font-medium mb-1">Data Bombole Pronte</label>
+                  <input
+                    type="date"
+                    value={formTestata["Data Bombole pronte"]}
+                    onChange={e => setFormTestata({...formTestata, "Data Bombole pronte": e.target.value})}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Date Collaudo</label>
+                  <input
+                    type="date"
+                    value={formTestata["Date collaudo"]}
+                    onChange={e => setFormTestata({...formTestata, "Date collaudo": e.target.value})}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium mb-1">Centro Revisione</label>
+                  <input
+                    type="text"
+                    value={formTestata["Centro Revisione"]}
+                    onChange={e => setFormTestata({...formTestata, "Centro Revisione": e.target.value})}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium mb-1">Luogo</label>
+                  <input
+                    type="text"
+                    value={formTestata["Luogo"]}
+                    onChange={e => setFormTestata({...formTestata, "Luogo": e.target.value})}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Costo Revisione €</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formTestata["Costo Revisione"]}
+                    onChange={e => setFormTestata({...formTestata, "Costo Revisione": e.target.value})}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Arrotondamento €</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formTestata["Arrotondamento"]}
+                    onChange={e => setFormTestata({...formTestata, "Arrotondamento": e.target.value})}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Bombole */}
