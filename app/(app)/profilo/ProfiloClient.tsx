@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import {
   User, Mail, Phone, CreditCard, MapPin, Shield, Anchor, Wind, Award,
   Calendar, Briefcase, CheckCircle, XCircle, KeyRound, Loader2, Camera,
-  Pencil, FileText, Upload, Trash2, ExternalLink, Package, Wrench
+  Pencil, FileText, Upload, Trash2, ExternalLink, Package, Wrench, Waves, LogIn
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -37,6 +37,7 @@ const TABS = [
   { id: "certificati", label: "Certificati", icon: FileText },
   { id: "bombole",     label: "Bombole",     icon: Package },
   { id: "noleggio",    label: "Noleggio",    icon: Wrench },
+  { id: "piscina",     label: "Piscina",     icon: Waves },
 ]
 
 export default function ProfiloClient({
@@ -170,6 +171,10 @@ export default function ProfiloClient({
             {activeTab === "certificati" && <TabCertificati socioId={socio.id} />}
             {activeTab === "bombole"     && <TabBombole bombole={bombole} />}
             {activeTab === "noleggio"    && <TabNoleggi socioId={socio.id} />}
+<<<<<<< HEAD
+            {activeTab === "piscina"     && <TabPiscina socioId={socio.id} />}
+=======
+>>>>>>> 41d77cc8f042f6030e1b9b91f035237d2fd665e9
           </div>
         </div>
       )}
@@ -599,6 +604,183 @@ function TabNoleggi({ socioId }: { socioId: number }) {
           </div>
         )
       })}
+<<<<<<< HEAD
+    </div>
+  )
+}
+
+// ── Tab: Piscina ──────────────────────────────────────────────────────────
+type PacchettoPiscina = {
+  id: number
+  data_acquisto: string
+  ingressi_totali: number
+  ingressi_usati: number
+  note: string | null
+}
+type IngressoPiscina = {
+  id: number
+  data_ingresso: string
+  ora_ingresso: string
+  tipo: "pacchetto" | "singolo"
+  note: string | null
+}
+
+function TabPiscina({ socioId }: { socioId: number }) {
+  const supabase = createClient()
+  const [pacchetti, setPacchetti] = useState<PacchettoPiscina[]>([])
+  const [ingressi, setIngressi]   = useState<IngressoPiscina[]>([])
+  const [loading, setLoading]     = useState(true)
+
+  useEffect(() => { loadDati() }, []) // eslint-disable-line
+
+  async function loadDati() {
+    setLoading(true)
+    const [{ data: pData }, { data: iData }] = await Promise.all([
+      supabase
+        .from("SW_Pacchetti_Piscina")
+        .select("id, data_acquisto, ingressi_totali, ingressi_usati, note")
+        .eq("socio_id", socioId)
+        .order("data_acquisto", { ascending: false }),
+      supabase
+        .from("SW_Ingressi_Piscina")
+        .select("id, data_ingresso, ora_ingresso, tipo, note")
+        .eq("socio_id", socioId)
+        .order("data_ingresso", { ascending: false })
+        .limit(50),
+    ])
+    setPacchetti((pData ?? []) as PacchettoPiscina[])
+    setIngressi((iData ?? []) as IngressoPiscina[])
+    setLoading(false)
+  }
+
+  if (loading) return (
+    <div className="py-10 flex justify-center">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+    </div>
+  )
+
+  const pacchettiAttivi   = pacchetti.filter(p => p.ingressi_usati < p.ingressi_totali)
+  const pacchettiEsauriti = pacchetti.filter(p => p.ingressi_usati >= p.ingressi_totali)
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Pacchetti ── */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Pacchetti — {pacchettiAttivi.length} attivi
+        </h3>
+
+        {pacchetti.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+            <Package className="w-10 h-10 mb-2 opacity-30" />
+            <p className="text-sm font-medium text-foreground">Nessun pacchetto</p>
+            <p className="text-xs mt-1">Contatta lo Staff per acquistarne uno</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {/* Attivi */}
+            {pacchettiAttivi.map(p => {
+              const rimasti = p.ingressi_totali - p.ingressi_usati
+              const perc    = (p.ingressi_usati / p.ingressi_totali) * 100
+              return (
+                <div key={p.id} className="bg-white border border-border rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      Acquistato il {format(new Date(p.data_acquisto), "dd MMMM yyyy", { locale: it })}
+                    </p>
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      {rimasti} rimasti
+                    </span>
+                  </div>
+                  {/* Barra */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{p.ingressi_usati}/{p.ingressi_totali} ingressi usati</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-cyan-400 transition-all"
+                        style={{ width: `${perc}%` }}
+                      />
+                    </div>
+                  </div>
+                  {/* Pallini */}
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: p.ingressi_totali }).map((_, i) => (
+                      <div key={i} className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                        i < p.ingressi_usati ? "bg-primary/20 text-primary" : "bg-emerald-100 text-emerald-600"
+                      }`}>
+                        {i < p.ingressi_usati ? "✓" : "○"}
+                      </div>
+                    ))}
+                  </div>
+                  {p.note && <p className="text-xs text-muted-foreground italic">{p.note}</p>}
+                </div>
+              )
+            })}
+
+            {/* Esauriti collassati */}
+            {pacchettiEsauriti.length > 0 && (
+              <details className="group">
+                <summary className="cursor-pointer text-xs text-muted-foreground select-none list-none flex items-center gap-1.5 py-1">
+                  <span className="group-open:rotate-90 transition-transform inline-block">›</span>
+                  {pacchettiEsauriti.length} pacchetti esauriti
+                </summary>
+                <div className="mt-2 space-y-1.5">
+                  {pacchettiEsauriti.map(p => (
+                    <div key={p.id} className="bg-secondary/50 border border-border rounded-xl px-4 py-2.5 opacity-60 flex items-center justify-between">
+                      <p className="text-xs font-medium">
+                        {format(new Date(p.data_acquisto), "dd MMM yyyy", { locale: it })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{p.ingressi_totali}/{p.ingressi_totali} usati</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Storico Ingressi ── */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Storico Ingressi — ultimi {ingressi.length}
+        </h3>
+
+        {ingressi.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+            <LogIn className="w-10 h-10 mb-2 opacity-30" />
+            <p className="text-sm font-medium text-foreground">Nessun ingresso registrato</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {ingressi.map(ing => (
+              <div key={ing.id} className="bg-white border border-border rounded-xl px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">
+                    {format(new Date(ing.data_ingresso), "EEEE dd MMMM yyyy", { locale: it })}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {ing.ora_ingresso?.slice(0, 5)}
+                    {ing.note && ` · ${ing.note}`}
+                  </p>
+                </div>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                  ing.tipo === "pacchetto"
+                    ? "bg-blue-50 text-blue-700"
+                    : "bg-amber-50 text-amber-700"
+                }`}>
+                  {ing.tipo === "pacchetto" ? "Pacchetto" : "Singolo"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+=======
+>>>>>>> 41d77cc8f042f6030e1b9b91f035237d2fd665e9
     </div>
   )
 }
