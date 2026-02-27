@@ -18,7 +18,7 @@ const navItems: { href: string; label: string; icon: React.ElementType; minRole?
   { href: "/certificati", label: "Certificati",       icon: FileText,     minRole: "Consiglio" },
   { href: "/inventario",  label: "Inventario",        icon: Package,      minRole: "Staff" },
   { href: "/noleggio",    label: "Noleggi",           icon: Gift,         minRole: "Staff" },
-  { href: "/piscina",     label: "Piscina",           icon: Waves,        minRole: "Staff" },
+  { href: "/piscina",     label: "Piscina",           icon: CheckCircle,  minRole: "Staff" },
   { href: "/profilo",     label: "Profilo",           icon: User },
 ]
 
