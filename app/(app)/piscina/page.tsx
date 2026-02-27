@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { createClient } from "@/lib/supabase/server"
 import { getUserRole, hasAccess } from "@/lib/roles"
 import { redirect } from "next/navigation"
@@ -107,5 +106,5 @@ export default async function PiscinaPage() {
   if (!user) redirect("/login")
 
   return <PiscinaClient />
->>>>>>> 41d77cc8f042f6030e1b9b91f035237d2fd665e9
 }
+
