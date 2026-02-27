@@ -90,7 +90,6 @@ export default async function PiscinaPage() {
       giaEntrato={!!ingressoGiaOggi}
     />
   )
-=======
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import PiscinaClient from "./PiscinaClient"
@@ -107,4 +106,5 @@ export default async function PiscinaPage() {
 
   return <PiscinaClient />
 }
+
 
