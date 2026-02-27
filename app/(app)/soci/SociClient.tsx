@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Plus, CheckCircle, XCircle, Shield, Anchor, Wind, Pencil, Trash2, Loader2 } from "lucide-react"
+import { Search, Plus, CheckCircle, XCircle, Shield, Anchor, Wind, Pencil, Trash2, Loader2, Tag } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { canAccess } from "@/lib/roles-client"
 import type { UserRole } from "@/lib/roles-client"
@@ -10,14 +10,14 @@ import { useRouter } from "next/navigation"
 const AVATAR_BASE_URL = process.env.NEXT_PUBLIC_AVATAR_BASE_URL ?? ""
 
 type Socio = any
-type Brevetto = { id: number; Nome: string | null }
+type Brevetto  = { id: number; Nome: string | null }
 type TipoSocio = { id: number; Descrizione: string | null }
 
 const emptyForm = {
   Nome: "", Cognome: "", email: "", Telefono: "",
   "Data di Nascita": "", "Luogo di nascita": "",
   Indirizzo: "", CAP: "", Comune: "", Provincia: "", Nazione: "Italia",
-  CF: "", Professione: "", Brevetto: "", "Tipo Socio New": "",
+  CF: "", Professione: "", Brevetto: "",
   Specializzazione: "", "Tipo Assicurazione": "", "Nota FIN": "", "Nota Patente": "",
   Attivo: true, "Addetto Ricarica": false, Assicurazione: false,
   FIN: false, "Patente Nautica": false,
@@ -26,17 +26,17 @@ const emptyForm = {
 export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
   soci: Socio[]; brevetti: Brevetto[]; tipiSocio: TipoSocio[]; userRole: UserRole
 }) {
-  const [search, setSearch] = useState("")
-  const [filterAttivo, setFilterAttivo] = useState<"all" | "true" | "false">("all")
-  const [showModal, setShowModal] = useState(false)
-  const [editSocio, setEditSocio] = useState<Socio | null>(null)
+  const [search, setSearch]               = useState("")
+  const [filterAttivo, setFilterAttivo]   = useState<"all" | "true" | "false">("all")
+  const [showModal, setShowModal]         = useState(false)
+  const [editSocio, setEditSocio]         = useState<Socio | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Socio | null>(null)
-  const [deleting, setDeleting] = useState(false)
+  const [deleting, setDeleting]           = useState(false)
   const supabase = createClient()
-  const router = useRouter()
+  const router   = useRouter()
 
   const filtered = soci.filter((s) => {
-    const q = search.toLowerCase()
+    const q           = search.toLowerCase()
     const matchSearch = !q || `${s.Nome} ${s.Cognome}`.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q)
     const matchAttivo = filterAttivo === "all" || (filterAttivo === "true" && s.Attivo) || (filterAttivo === "false" && !s.Attivo)
     return matchSearch && matchAttivo
@@ -58,10 +58,12 @@ export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
           <h1 className="text-3xl font-bold">Soci</h1>
           <p className="text-muted-foreground mt-1">{soci.length} soci totali</p>
         </div>
-        <button onClick={() => setShowModal(true)}
-          className="ocean-gradient text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md hover:opacity-90 transition-all">
-          <Plus className="w-4 h-4" /> Nuovo Socio
-        </button>
+        {canAccess("Consiglio", userRole) && (
+          <button onClick={() => setShowModal(true)}
+            className="ocean-gradient text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-md hover:opacity-90 transition-all">
+            <Plus className="w-4 h-4" /> Nuovo Socio
+          </button>
+        )}
       </div>
 
       <div className="flex gap-3 flex-wrap">
@@ -89,7 +91,7 @@ export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
                 <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Socio</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Contatti</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Brevetto</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Tipo</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-muted-foreground">Cariche</th>
                 <th className="text-center px-5 py-3.5 font-semibold text-muted-foreground">Stato</th>
                 <th className="text-center px-5 py-3.5 font-semibold text-muted-foreground">Badge</th>
                 <th className="text-center px-5 py-3.5 font-semibold text-muted-foreground">Azioni</th>
@@ -105,7 +107,7 @@ export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
                       <div className="w-9 h-9 rounded-full ocean-gradient flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
                         {s.Avatar
                           ? <img src={`${AVATAR_BASE_URL}${s.Avatar}`} alt="" className="w-full h-full object-cover" />
-                          : <>{s.Nome?.[0] ?? "?"}{s.Cognome?.[0] ?? ""}</> }
+                          : <>{s.Nome?.[0] ?? "?"}{s.Cognome?.[0] ?? ""}</>}
                       </div>
                       <div>
                         <p className="font-medium">{s.Nome} {s.Cognome}</p>
@@ -123,7 +125,16 @@ export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
                       : <span className="text-muted-foreground text-xs">—</span>}
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className="text-xs text-muted-foreground">{s.UT_TipoSocio?.Descrizione ?? "—"}</span>
+                    <div className="flex flex-wrap gap-1">
+                      {s.UT_SociRuoli && s.UT_SociRuoli.length > 0
+                        ? s.UT_SociRuoli.map((r: any) => (
+                            <span key={r.id} className="inline-flex items-center gap-1 text-xs bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full font-medium">
+                              <Tag className="w-2.5 h-2.5" />
+                              {r.UT_TipoSocio?.Descrizione ?? "—"}
+                            </span>
+                          ))
+                        : <span className="text-muted-foreground text-xs">—</span>}
+                    </div>
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     {s.Attivo
@@ -160,6 +171,7 @@ export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
         </div>
       </div>
 
+      {/* Confirm delete */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
@@ -196,18 +208,20 @@ export default function SociClient({ soci, brevetti, tipiSocio, userRole }: {
   )
 }
 
+// ── SocioModal ────────────────────────────────────────────────────────────────
 function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
-  mode: "add" | "edit"; socio?: Socio; brevetti: Brevetto[]; tipiSocio: TipoSocio[];
+  mode: "add" | "edit"; socio?: Socio; brevetti: Brevetto[]; tipiSocio: TipoSocio[]
   onClose: () => void; onSaved: () => void
 }) {
-  const [form, setForm] = useState(emptyForm)
-  const [tab, setTab] = useState<"anagrafica" | "sub" | "note">("anagrafica")
-  const [error, setError] = useState("")
-  const [saving, setSaving] = useState(false)
+  const [form, setForm]         = useState(emptyForm)
+  const [ruoliSelezionati, setRuoliSelezionati] = useState<number[]>([])
+  const [tab, setTab]           = useState<"anagrafica" | "sub" | "note">("anagrafica")
+  const [error, setError]       = useState("")
+  const [saving, setSaving]     = useState(false)
+  const supabase                = createClient()
 
   useEffect(() => {
     if (mode === "edit" && socio) {
-      // Carica TUTTI i campi dal database
       setForm({
         Nome: socio.Nome ?? "",
         Cognome: socio.Cognome ?? "",
@@ -223,7 +237,6 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
         CF: socio.CF ?? "",
         Professione: socio.Professione ?? "",
         Brevetto: socio.Brevetto ?? "",
-        "Tipo Socio New": socio["Tipo Socio New"] ?? "",
         Specializzazione: socio.Specializzazione ?? "",
         "Tipo Assicurazione": socio["Tipo Assicurazione"] ?? "",
         "Nota FIN": socio["Nota FIN"] ?? "",
@@ -234,18 +247,24 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
         FIN: socio.FIN ?? false,
         "Patente Nautica": socio["Patente Nautica"] ?? false,
       })
+      // Carica ruoli esistenti dalla join UT_SociRuoli
+      const ruoliIds = (socio.UT_SociRuoli ?? []).map((r: any) => r.tipo_id as number)
+      setRuoliSelezionati(ruoliIds)
     } else {
       setForm(emptyForm)
+      setRuoliSelezionati([])
     }
     setError("")
     setTab("anagrafica")
   }, [mode, socio])
 
-  const set = (key: keyof typeof form, value: any) => {
-    setForm(f => ({ ...f, [key]: value }))
-  }
+  const set = (key: keyof typeof form, value: any) => setForm(f => ({ ...f, [key]: value }))
 
-  const supabase = createClient()
+  function toggleRuolo(tipoId: number) {
+    setRuoliSelezionati(prev =>
+      prev.includes(tipoId) ? prev.filter(id => id !== tipoId) : [...prev, tipoId]
+    )
+  }
 
   const handleSave = async () => {
     if (!form.Nome?.trim() || !form.Cognome?.trim()) {
@@ -254,42 +273,53 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
     }
     setSaving(true)
     const payload = {
-      Nome: form.Nome,
-      Cognome: form.Cognome,
-      email: form.email,
-      Telefono: form.Telefono,
-      "Data di Nascita": form["Data di Nascita"],
-      "Luogo di nascita": form["Luogo di nascita"],
-      Indirizzo: form.Indirizzo,
-      CAP: form.CAP,
-      Comune: form.Comune,
-      Provincia: form.Provincia,
-      Nazione: form.Nazione,
-      CF: form.CF,
-      Professione: form.Professione,
-      Brevetto: form.Brevetto,
-      "Tipo Socio New": form["Tipo Socio New"],
-      Specializzazione: form.Specializzazione,
-      "Tipo Assicurazione": form["Tipo Assicurazione"],
-      "Nota FIN": form["Nota FIN"],
-      "Nota Patente": form["Nota Patente"],
+      Nome: form.Nome, Cognome: form.Cognome,
+      email: form.email, Telefono: form.Telefono,
+      "Data di Nascita": form["Data di Nascita"] || null,
+      "Luogo di nascita": form["Luogo di nascita"] || null,
+      Indirizzo: form.Indirizzo || null,
+      CAP: form.CAP || null, Comune: form.Comune || null,
+      Provincia: form.Provincia || null, Nazione: form.Nazione || null,
+      CF: form.CF || null, Professione: form.Professione || null,
+      Brevetto: form.Brevetto || null,
+      Specializzazione: form.Specializzazione || null,
+      "Tipo Assicurazione": form["Tipo Assicurazione"] || null,
+      "Nota FIN": form["Nota FIN"] || null,
+      "Nota Patente": form["Nota Patente"] || null,
       Attivo: form.Attivo,
       "Addetto Ricarica": form["Addetto Ricarica"],
       Assicurazione: form.Assicurazione,
       FIN: form.FIN,
       "Patente Nautica": form["Patente Nautica"],
     }
-    const { error } = mode === "add"
-      ? await supabase.from("BP_soci").insert([payload])
-      : await supabase.from("BP_soci").update(payload).eq("id", socio!.id)
-    if (error) { setError(error.message); setSaving(false) }
-    else onSaved()
+
+    let socioId: number
+    if (mode === "add") {
+      const { data, error: err } = await supabase.from("BP_soci").insert([payload]).select("id").single()
+      if (err || !data) { setError(err?.message ?? "Errore creazione"); setSaving(false); return }
+      socioId = data.id
+    } else {
+      const { error: err } = await supabase.from("BP_soci").update(payload).eq("id", socio!.id)
+      if (err) { setError(err.message); setSaving(false); return }
+      socioId = socio!.id
+    }
+
+    // Gestione ruoli: elimina tutti quelli esistenti e reinserisce la selezione corrente
+    await supabase.from("UT_SociRuoli").delete().eq("socio_id", socioId)
+    if (ruoliSelezionati.length > 0) {
+      const { error: ruoliErr } = await supabase.from("UT_SociRuoli").insert(
+        ruoliSelezionati.map(tipo_id => ({ socio_id: socioId, tipo_id }))
+      )
+      if (ruoliErr) { setError(ruoliErr.message); setSaving(false); return }
+    }
+
+    onSaved()
   }
 
   const tabs = [
     { key: "anagrafica" as const, label: "Anagrafica" },
-    { key: "sub" as const, label: "Sub & Brevetti" },
-    { key: "note" as const, label: "Note & Extra" },
+    { key: "sub" as const,        label: "Sub & Brevetti" },
+    { key: "note" as const,       label: "Note & Extra" },
   ]
 
   return (
@@ -313,26 +343,26 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
           {tab === "anagrafica" && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Nome *" value={form.Nome} onChange={v => set("Nome", v)} />
+                <Field label="Nome *"    value={form.Nome}    onChange={v => set("Nome", v)} />
                 <Field label="Cognome *" value={form.Cognome} onChange={v => set("Cognome", v)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Email" value={form.email} onChange={v => set("email", v)} type="email" />
+                <Field label="Email"    value={form.email}    onChange={v => set("email", v)}    type="email" />
                 <Field label="Telefono" value={form.Telefono} onChange={v => set("Telefono", v)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Data di Nascita" value={form["Data di Nascita"]} onChange={v => set("Data di Nascita", v)} type="date" />
+                <Field label="Data di Nascita"  value={form["Data di Nascita"]}  onChange={v => set("Data di Nascita", v)}  type="date" />
                 <Field label="Luogo di Nascita" value={form["Luogo di nascita"]} onChange={v => set("Luogo di nascita", v)} />
               </div>
-              <Field label="Codice Fiscale" value={form.CF} onChange={v => set("CF", v)} />
-              <Field label="Indirizzo" value={form.Indirizzo} onChange={v => set("Indirizzo", v)} />
+              <Field label="Codice Fiscale" value={form.CF}        onChange={v => set("CF", v)} />
+              <Field label="Indirizzo"      value={form.Indirizzo} onChange={v => set("Indirizzo", v)} />
               <div className="grid grid-cols-3 gap-3">
-                <Field label="CAP" value={form.CAP} onChange={v => set("CAP", v)} />
-                <Field label="Comune" value={form.Comune} onChange={v => set("Comune", v)} />
+                <Field label="CAP"      value={form.CAP}      onChange={v => set("CAP", v)} />
+                <Field label="Comune"   value={form.Comune}   onChange={v => set("Comune", v)} />
                 <Field label="Provincia" value={form.Provincia} onChange={v => set("Provincia", v)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Nazione" value={form.Nazione} onChange={v => set("Nazione", v)} />
+                <Field label="Nazione"     value={form.Nazione}     onChange={v => set("Nazione", v)} />
                 <Field label="Professione" value={form.Professione} onChange={v => set("Professione", v)} />
               </div>
             </>
@@ -340,39 +370,66 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
 
           {tab === "sub" && (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Brevetto</label>
-                  <select value={form.Brevetto} onChange={e => set("Brevetto", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                    <option value="">— Nessuno —</option>
-                    {brevetti.map(b => <option key={b.id} value={b.id}>{b.Nome}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Tipo Socio</label>
-                  <select value={form["Tipo Socio New"]} onChange={e => set("Tipo Socio New", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                    <option value="">— Seleziona —</option>
-                    {tipiSocio.map(t => <option key={t.id} value={t.id}>{t.Descrizione}</option>)}
-                  </select>
-                </div>
+              {/* Brevetto */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Brevetto</label>
+                <select value={form.Brevetto} onChange={e => set("Brevetto", e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="">— Nessuno —</option>
+                  {brevetti.map(b => <option key={b.id} value={b.id}>{b.Nome}</option>)}
+                </select>
               </div>
-              <Field label="Specializzazione" value={form.Specializzazione} onChange={v => set("Specializzazione", v)} />
+
+              {/* Cariche / Ruoli — multi-selezione */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Cariche / Ruoli
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">
+                    ({ruoliSelezionati.length} selezionat{ruoliSelezionati.length === 1 ? "a" : "e"})
+                  </span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {tipiSocio.map(t => {
+                    const attivo = ruoliSelezionati.includes(t.id)
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleRuolo(t.id)}
+                        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border-2 font-medium transition-all ${
+                          attivo
+                            ? "border-violet-400 bg-violet-50 text-violet-700"
+                            : "border-border bg-white text-muted-foreground hover:border-violet-200"
+                        }`}
+                      >
+                        <Tag className="w-3 h-3" />
+                        {t.Descrizione}
+                        {attivo && <CheckCircle className="w-3 h-3 ml-0.5" />}
+                      </button>
+                    )
+                  })}
+                </div>
+                {tipiSocio.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Nessun tipo socio configurato in UT_TipoSocio.</p>
+                )}
+              </div>
+
+              <Field label="Specializzazione"   value={form.Specializzazione}      onChange={v => set("Specializzazione", v)} />
               <Field label="Tipo Assicurazione" value={form["Tipo Assicurazione"]} onChange={v => set("Tipo Assicurazione", v)} />
+
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <CheckField label="Attivo" checked={form.Attivo} onChange={v => set("Attivo", v)} />
+                <CheckField label="Attivo"           checked={form.Attivo}             onChange={v => set("Attivo", v)} />
                 <CheckField label="Addetto Ricarica" checked={form["Addetto Ricarica"]} onChange={v => set("Addetto Ricarica", v)} />
-                <CheckField label="Assicurazione" checked={form.Assicurazione} onChange={v => set("Assicurazione", v)} />
-                <CheckField label="Tesserato FIN" checked={form.FIN} onChange={v => set("FIN", v)} />
-                <CheckField label="Patente Nautica" checked={form["Patente Nautica"]} onChange={v => set("Patente Nautica", v)} />
+                <CheckField label="Assicurazione"    checked={form.Assicurazione}       onChange={v => set("Assicurazione", v)} />
+                <CheckField label="Tesserato FIN"    checked={form.FIN}                 onChange={v => set("FIN", v)} />
+                <CheckField label="Patente Nautica"  checked={form["Patente Nautica"]}  onChange={v => set("Patente Nautica", v)} />
               </div>
             </>
           )}
 
           {tab === "note" && (
             <>
-              <TextareaField label="Nota FIN" value={form["Nota FIN"]} onChange={v => set("Nota FIN", v)} />
+              <TextareaField label="Nota FIN"             value={form["Nota FIN"]}    onChange={v => set("Nota FIN", v)} />
               <TextareaField label="Nota Patente Nautica" value={form["Nota Patente"]} onChange={v => set("Nota Patente", v)} />
             </>
           )}
@@ -385,7 +442,8 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
             Annulla
           </button>
           <button onClick={handleSave} disabled={saving}
-            className="ocean-gradient text-white px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-60">
+            className="ocean-gradient text-white px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-60 flex items-center gap-2">
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {saving ? "Salvo..." : mode === "add" ? "Salva Socio" : "Aggiorna Socio"}
           </button>
         </div>
@@ -394,7 +452,10 @@ function SocioModal({ mode, socio, brevetti, tipiSocio, onClose, onSaved }: {
   )
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function Field({ label, value, onChange, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string
+}) {
   return (
     <div>
       <label className="block text-sm font-medium mb-1.5">{label}</label>
@@ -404,7 +465,9 @@ function Field({ label, value, onChange, type = "text" }: { label: string; value
   )
 }
 
-function TextareaField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function TextareaField({ label, value, onChange }: {
+  label: string; value: string; onChange: (v: string) => void
+}) {
   return (
     <div>
       <label className="block text-sm font-medium mb-1.5">{label}</label>
@@ -414,7 +477,9 @@ function TextareaField({ label, value, onChange }: { label: string; value: strin
   )
 }
 
-function CheckField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function CheckField({ label, checked, onChange }: {
+  label: string; checked: boolean; onChange: (v: boolean) => void
+}) {
   return (
     <label className="flex items-center gap-2 cursor-pointer select-none">
       <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="w-4 h-4 rounded accent-primary" />

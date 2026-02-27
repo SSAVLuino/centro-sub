@@ -19,7 +19,7 @@ export default async function SociPage() {
         "Tipo Assicurazione",
         "Nota FIN", "Nota Patente",
         UT_Brevetti(id, Nome),
-        UT_TipoSocio(id, Descrizione)
+        UT_SociRuoli(id, tipo_id, UT_TipoSocio(id, Descrizione))
       `)
       .order("Cognome", { ascending: true }),
     supabase.from("UT_Brevetti").select("id, Nome").order("Ordinamento"),
