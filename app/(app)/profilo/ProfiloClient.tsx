@@ -171,10 +171,7 @@ export default function ProfiloClient({
             {activeTab === "certificati" && <TabCertificati socioId={socio.id} />}
             {activeTab === "bombole"     && <TabBombole bombole={bombole} />}
             {activeTab === "noleggio"    && <TabNoleggi socioId={socio.id} />}
-<<<<<<< HEAD
             {activeTab === "piscina"     && <TabPiscina socioId={socio.id} />}
-=======
->>>>>>> 41d77cc8f042f6030e1b9b91f035237d2fd665e9
           </div>
         </div>
       )}
@@ -604,7 +601,6 @@ function TabNoleggi({ socioId }: { socioId: number }) {
           </div>
         )
       })}
-<<<<<<< HEAD
     </div>
   )
 }
@@ -779,8 +775,6 @@ function TabPiscina({ socioId }: { socioId: number }) {
           </div>
         )}
       </div>
-=======
->>>>>>> 41d77cc8f042f6030e1b9b91f035237d2fd665e9
     </div>
   )
 }
@@ -992,3 +986,4 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
     </div>
   )
 }
+
