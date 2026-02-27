@@ -18,7 +18,7 @@ export default async function ProfiloPage() {
       FIN, "Nota FIN", "Patente Nautica", "Nota Patente",
       Specializzazione, created_at, Avatar,
       UT_Brevetti(id, Nome, Didattica),
-      UT_TipoSocio(id, Descrizione)
+      UT_SociRuoli(id, tipo_id, UT_TipoSocio(id, Descrizione))
     `)
     .eq("email", user.email!)
     .single()

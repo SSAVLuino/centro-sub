@@ -91,10 +91,14 @@ export default function ProfiloClient({
           <div className="text-right min-w-0">
             <h2 className="text-xl font-bold text-white truncate drop-shadow-sm" style={{ fontFamily: "'Syne', sans-serif" }}>{displayName}</h2>
             <p className="text-sm text-white/75 truncate">{user.email}</p>
-            {socio?.UT_TipoSocio?.Descrizione && (
-              <span className="inline-block mt-1 text-xs bg-white/20 text-white px-3 py-0.5 rounded-full font-medium backdrop-blur-sm">
-                {socio.UT_TipoSocio.Descrizione}
-              </span>
+            {socio?.UT_SociRuoli && socio.UT_SociRuoli.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1 justify-end">
+                {socio.UT_SociRuoli.map((r: any) => (
+                  <span key={r.id} className="text-xs bg-white/20 text-white px-2.5 py-0.5 rounded-full font-medium backdrop-blur-sm">
+                    {r.UT_TipoSocio?.Descrizione}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -218,6 +222,19 @@ function TabDati({ socio }: { socio: Socio }) {
         <InfoRow icon={<Award className="w-4 h-4" />} label="Brevetto"         value={socio.UT_Brevetti?.Nome} />
         {socio.UT_Brevetti?.Didattica && <InfoRow icon={<Award className="w-4 h-4" />} label="Didattica" value={socio.UT_Brevetti.Didattica} />}
         <InfoRow icon={<Award className="w-4 h-4" />} label="Specializzazione" value={socio.Specializzazione} />
+        {/* Cariche — read only, modificabili solo dalla pagina Soci */}
+        {socio.UT_SociRuoli && socio.UT_SociRuoli.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1.5">Cariche</p>
+            <div className="flex flex-wrap gap-1.5">
+              {socio.UT_SociRuoli.map((r: any) => (
+                <span key={r.id} className="inline-flex items-center gap-1 text-xs bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full font-medium">
+                  {r.UT_TipoSocio?.Descrizione}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2 pt-1">
           <Badge active={socio["Addetto Ricarica"]} label="Addetto Ricarica" icon={<Wind className="w-3 h-3" />} />
           <Badge active={socio.FIN}                 label="Tesserato FIN"    icon={<Anchor className="w-3 h-3" />} />
@@ -986,4 +1003,3 @@ function EditProfiloModal({ socio, onClose, onSaved }: { socio: Socio; onClose: 
     </div>
   )
 }
-
