@@ -90,5 +90,6 @@ export default async function PiscinaPage() {
       giaEntrato={!!ingressoGiaOggi}
     />
   )
+}
 
 
