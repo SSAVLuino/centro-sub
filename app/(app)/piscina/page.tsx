@@ -81,9 +81,9 @@ export default async function PiscinaPage() {
     <PiscinaClient
       userRole={userRole}
       soci={soci ?? []}
-      ingressiOggi={ingressiOggi ?? []}
-      pacchettiAll={pacchettiAll ?? []}
-      ingressiAnno={ingressiAnno ?? []}
+      ingressiOggi={(ingressiOggi ?? []) as any}
+      pacchettiAll={(pacchettiAll ?? []) as any}
+      ingressiAnno={(ingressiAnno ?? []) as any}
       annoStart={annoStart}
       annoEnd={annoEnd}
       socioCorrente={socioCorrente ?? null}
