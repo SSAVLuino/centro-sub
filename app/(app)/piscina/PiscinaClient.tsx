@@ -78,7 +78,7 @@ export default function PiscinaClient({
       .select("id, data_ingresso, tipo, socio_id")
       .gte("data_ingresso", annoStart)
       .lte("data_ingresso", annoEnd)
-    setIngressiAnnoState((data as IngressoAnno[]) ?? [])
+    setIngressiAnnoState((data as unknown as IngressoAnno[]) ?? [])
   }
 
   async function refreshIngressi() {
@@ -88,7 +88,7 @@ export default function PiscinaClient({
       .select("id, ora_ingresso, tipo, note, socio_id, BP_soci(id, Nome, Cognome)")
       .eq("data_ingresso", today)
       .order("ora_ingresso", { ascending: true })
-    setIngressiOggi((data as Ingresso[]) ?? [])
+    setIngressiOggi((data as unknown as Ingresso[]) ?? [])
 
     // Aggiorna flag giaEntrato per il socio corrente
     if (socioCorrente) {
@@ -110,7 +110,7 @@ export default function PiscinaClient({
       .from("SW_Pacchetti_Piscina")
       .select("id, socio_id, data_acquisto, ingressi_totali, ingressi_usati, note, BP_soci(id, Nome, Cognome)")
       .order("data_acquisto", { ascending: false })
-    setPacchetti((data as Pacchetto[]) ?? [])
+    setPacchetti((data as unknown as Pacchetto[]) ?? [])
   }
 
   async function handleTabChange(newTab: "ingressi" | "pacchetti" | "statistiche") {
