@@ -422,7 +422,7 @@ function BombolaModal({
                 <p>Clicca per caricare una foto</p>
                 <p className="text-xs mt-0.5">JPG, PNG, WEBP · Max 5MB</p>
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
+              <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoChange} />
             </div>
           </div>
 
