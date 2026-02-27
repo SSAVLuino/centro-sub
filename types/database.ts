@@ -12,6 +12,15 @@ export type TipoSocio = {
   created_at: string
 }
 
+export type SocioRuolo = {
+  id: number
+  socio_id: number
+  tipo_id: number
+  created_at: string
+  // joined
+  UT_TipoSocio?: Pick<TipoSocio, "id" | "Descrizione">
+}
+
 export type Socio = {
   id: number
   created_at: string
@@ -20,7 +29,6 @@ export type Socio = {
   email: string | null
   Telefono: string | null
   Attivo: boolean | null
-  "Tipo Socio": string | null
   Avatar: string | null
   "Addetto Ricarica": boolean | null
   "Patente Nautica": boolean | null
@@ -40,10 +48,9 @@ export type Socio = {
   FIN: boolean | null
   "Nota FIN": string | null
   Brevetto: number | null
-  "Tipo Socio New": number | null
   // joined
   UT_Brevetti?: Brevetto
-  UT_TipoSocio?: TipoSocio
+  UT_SociRuoli?: SocioRuolo[]
 }
 
 export type RicaricaCompressore = {
