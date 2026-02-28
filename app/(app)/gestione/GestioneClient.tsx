@@ -196,7 +196,14 @@ export default function GestioneClient({ roles }: Props) {
     setLoading(true); setError(null)
     try {
       const res = await fetch("/api/admin/users")
-      const json = await res.json()
+      const text = await res.text()
+      let json: any
+      try {
+        json = JSON.parse(text)
+      } catch {
+        setError(`Errore API (${res.status}): ${text.slice(0, 200)}`)
+        return
+      }
       if (!res.ok) throw new Error(json.error ?? "Errore")
       setUsers(json.users)
     } catch (e) {
