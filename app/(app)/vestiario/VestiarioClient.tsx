@@ -203,21 +203,21 @@ function VestiarioModal({ item, onClose, onSaved }: {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Quantità</label>
-                <div className="flex items-center gap-0 rounded-xl border border-border overflow-hidden bg-white">
+                <div className="flex items-center rounded-xl border border-border bg-white overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, Qta: String(Math.max(0, parseInt(form.Qta || "0") - 1)) })}
-                    className="px-3 py-2.5 text-lg font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all select-none"
+                    className="w-10 py-2.5 text-lg font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all select-none shrink-0"
                   >−</button>
                   <input
                     type="number" min="0" value={form.Qta}
                     onChange={e => setForm({ ...form, Qta: e.target.value })}
-                    className="flex-1 py-2.5 text-sm text-center focus:outline-none bg-white border-x border-border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-full py-2.5 text-sm text-center focus:outline-none bg-white border-x border-border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, Qta: String(parseInt(form.Qta || "0") + 1) })}
-                    className="px-3 py-2.5 text-lg font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all select-none"
+                    className="w-10 py-2.5 text-lg font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all select-none shrink-0"
                   >+</button>
                 </div>
               </div>
