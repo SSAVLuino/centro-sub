@@ -53,20 +53,29 @@ async function checkAdmin(req: NextRequest): Promise<boolean> {
 
 // ── GET → lista utenti con ruolo ──────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  if (!(await checkAdmin(req)))
-    return NextResponse.json({ error: "Non autorizzato" }, { status: 403 })
-
   try {
+    // Step 1: verifica service role key
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY mancante" }, { status: 500 })
+    }
+
+    // Step 2: verifica admin
+    const isAdmin = await checkAdmin(req)
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Non autorizzato - non sei Admin" }, { status: 403 })
+    }
+
+    // Step 3: lista utenti
     const admin = createAdminClient()
-    const supabase = createClientFromRequest(req)
-
     const { data: { users }, error: usersErr } = await admin.auth.admin.listUsers({ perPage: 500 })
-    if (usersErr) return NextResponse.json({ error: usersErr.message }, { status: 500 })
+    if (usersErr) return NextResponse.json({ error: `listUsers: ${usersErr.message}` }, { status: 500 })
 
+    // Step 4: carica ruoli
+    const supabase = createClientFromRequest(req)
     const { data: userRoles, error: rolesErr } = await supabase
       .from("users_roles")
       .select("user_id, roles(id, name)")
-    if (rolesErr) return NextResponse.json({ error: rolesErr.message }, { status: 500 })
+    if (rolesErr) return NextResponse.json({ error: `userRoles: ${rolesErr.message}` }, { status: 500 })
 
     const roleMap: Record<string, { id: number; name: string }> = {}
     for (const ur of userRoles ?? []) {
