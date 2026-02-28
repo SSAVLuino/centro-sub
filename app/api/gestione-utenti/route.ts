@@ -128,18 +128,29 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ── PATCH → aggiorna ruolo utente ─────────────────────────────────────────
+// ── PATCH → aggiorna o rimuove ruolo utente ───────────────────────────────
 export async function PATCH(req: NextRequest) {
   if (!(await checkAdmin(req)))
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 })
 
   try {
-    const { userId, roleId } = await req.json()
-    if (!userId || !roleId)
-      return NextResponse.json({ error: "userId e roleId obbligatori" }, { status: 400 })
+    const { userId, roleId, removeRole } = await req.json()
+    if (!userId)
+      return NextResponse.json({ error: "userId obbligatorio" }, { status: 400 })
 
     const supabase = createClientFromRequest(req)
+
+    // Rimuovi sempre l'assegnamento precedente
     await supabase.from("users_roles").delete().eq("user_id", userId)
+
+    // Se removeRole=true ci fermiamo qui — utente senza ruolo
+    if (removeRole)
+      return NextResponse.json({ success: true })
+
+    // Altrimenti assegna il nuovo ruolo
+    if (!roleId)
+      return NextResponse.json({ error: "roleId obbligatorio" }, { status: 400 })
+
     const { error } = await supabase.from("users_roles").insert({ user_id: userId, role_id: roleId })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
