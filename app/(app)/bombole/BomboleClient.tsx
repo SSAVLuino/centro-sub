@@ -331,7 +331,9 @@ function BombolaModal({
   const fotoPreview = fotoLocalPreview ?? existingSignedUrl
   const [saving, setSaving]   = useState(false)
   const [error, setError]     = useState<string | null>(null)
-  const fileInputRef           = useRef<HTMLInputElement>(null)
+  const fileInputRef    = useRef<HTMLInputElement>(null)
+  const cameraInputRef  = useRef<HTMLInputElement>(null)
+  const [showFotoMenu, setShowFotoMenu] = useState(false)
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }))
 
@@ -409,20 +411,35 @@ function BombolaModal({
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Foto</label>
             <div className="flex items-center gap-4">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-24 h-24 rounded-2xl border-2 border-dashed border-border hover:border-primary/40 cursor-pointer transition-all overflow-hidden bg-secondary/30 flex items-center justify-center shrink-0"
-              >
-                {fotoPreview
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={fotoPreview} alt="" className="w-full h-full object-cover" />
-                  : <Camera className="w-8 h-8 text-muted-foreground" />}
+              <div className="relative">
+                <div
+                  onClick={() => setShowFotoMenu(v => !v)}
+                  className="w-24 h-24 rounded-2xl border-2 border-dashed border-border hover:border-primary/40 cursor-pointer transition-all overflow-hidden bg-secondary/30 flex items-center justify-center shrink-0"
+                >
+                  {fotoPreview
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={fotoPreview} alt="" className="w-full h-full object-cover" />
+                    : <Camera className="w-8 h-8 text-muted-foreground" />}
+                </div>
+                {showFotoMenu && (
+                  <div className="absolute z-20 mt-1 left-0 bg-white border border-border rounded-xl shadow-lg overflow-hidden w-48">
+                    <button onClick={() => { setShowFotoMenu(false); cameraInputRef.current?.click() }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-secondary/60 transition-colors flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-primary" /> Scatta foto
+                    </button>
+                    <button onClick={() => { setShowFotoMenu(false); fileInputRef.current?.click() }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-secondary/60 transition-colors flex items-center gap-2">
+                      <span className="text-base">🖼️</span> Scegli dalla galleria
+                    </button>
+                  </div>
+                )}
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoChange} />
+                <input ref={fileInputRef}   type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
               </div>
               <div className="text-sm text-muted-foreground">
-                <p>Clicca per caricare una foto</p>
+                <p>Tocca per aggiungere una foto</p>
                 <p className="text-xs mt-0.5">JPG, PNG, WEBP · Max 5MB</p>
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoChange} />
             </div>
           </div>
 
