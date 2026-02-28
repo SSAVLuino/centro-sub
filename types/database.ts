@@ -158,6 +158,8 @@ export type Vestiario = {
   "Taglia": string | null
   "Colore": string | null
   "Foto": string | null
+  "Foto2": string | null
+  "Foto3": string | null
   "Note": string | null
   "Prezzo": number | null
   "Attivo": boolean | null
