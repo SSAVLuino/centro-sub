@@ -19,7 +19,9 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
   const [error, setError] = useState<string | null>(null)
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(item?.["Foto"] ? "Foto caricata" : null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef    = useRef<HTMLInputElement>(null)
+  const cameraInputRef  = useRef<HTMLInputElement>(null)
+  const [showFotoMenu, setShowFotoMenu] = useState(false)
   const supabase = createClient()
 
   const [form, setForm] = useState({
@@ -141,16 +143,31 @@ export default function InventarioModal({ item, onClose, onSaved, userRole }: Pr
           {/* Upload foto */}
           <div className="bg-secondary/30 rounded-2xl border border-border p-4 space-y-2">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Foto</h3>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border rounded-xl p-4 hover:border-primary/40 transition-all cursor-pointer bg-white flex items-center gap-3"
-            >
-              <Camera className="w-5 h-5 text-muted-foreground shrink-0" />
-              <p className="text-sm text-muted-foreground">
-                {fotoPreview ?? "Clicca per caricare una foto (max 5MB)"}
-              </p>
+            <div className="relative">
+              <div
+                onClick={() => setShowFotoMenu(v => !v)}
+                className="border-2 border-dashed border-border rounded-xl p-4 hover:border-primary/40 transition-all cursor-pointer bg-white flex items-center gap-3"
+              >
+                <Camera className="w-5 h-5 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  {fotoPreview ?? "Clicca per aggiungere una foto (max 5MB)"}
+                </p>
+              </div>
+              {showFotoMenu && (
+                <div className="absolute z-20 mt-1 left-0 bg-white border border-border rounded-xl shadow-lg overflow-hidden w-48">
+                  <button onClick={() => { setShowFotoMenu(false); cameraInputRef.current?.click() }}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-secondary/60 transition-colors flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-primary" /> Scatta foto
+                  </button>
+                  <button onClick={() => { setShowFotoMenu(false); fileInputRef.current?.click() }}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-secondary/60 transition-colors flex items-center gap-2">
+                    <span className="text-base">🖼️</span> Scegli dalla galleria
+                  </button>
+                </div>
+              )}
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFotoChange} className="hidden" />
+            <input ref={fileInputRef}   type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
           </div>
 
           {/* Informazioni principali */}
