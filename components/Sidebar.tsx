@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Users, Wind, LogOut, Menu, X, User, FileText, Package, CheckCircle2, Gift, Shirt } from "lucide-react"
+import { LayoutDashboard, Users, Wind, LogOut, Menu, X, User, FileText, Package, CheckCircle2, Gift, Shirt, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { canAccess } from "@/lib/roles-client"
 import type { UserRole } from "@/lib/roles-client"
@@ -21,6 +21,7 @@ const navItems: { href: string; label: string; icon: React.ElementType; minRole?
   { href: "/noleggio",    label: "Noleggi",           icon: Gift,         minRole: "Staff" },
   { href: "/piscina",     label: "Piscina",           icon: CheckCircle2 },
   { href: "/profilo",     label: "Profilo",           icon: User },
+  { href: "/gestione",    label: "Gestione Utenti",   icon: ShieldCheck,  minRole: "Admin" },
 ]
 
 // ── Logo SSAV SVG inline ──────────────────────────────────────────────────
