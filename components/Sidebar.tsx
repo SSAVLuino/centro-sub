@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Users, Wind, LogOut, Menu, X, User, FileText, Package, CheckCircle2, Gift } from "lucide-react"
+import { LayoutDashboard, Users, Wind, LogOut, Menu, X, User, FileText, Package, CheckCircle2, Gift, Shirt } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { canAccess } from "@/lib/roles-client"
 import type { UserRole } from "@/lib/roles-client"
@@ -17,6 +17,7 @@ const navItems: { href: string; label: string; icon: React.ElementType; minRole?
   { href: "/revisioni",   label: "Revisioni Bombole", icon: CheckCircle2, minRole: "Consiglio" },
   { href: "/certificati", label: "Certificati",       icon: FileText,     minRole: "Consiglio" },
   { href: "/inventario",  label: "Inventario",        icon: Package,      minRole: "Staff" },
+  { href: "/vestiario",   label: "Vestiario",         icon: Shirt,        minRole: "Consiglio" },
   { href: "/noleggio",    label: "Noleggi",           icon: Gift,         minRole: "Staff" },
   { href: "/piscina",     label: "Piscina",           icon: CheckCircle2 },
   { href: "/profilo",     label: "Profilo",           icon: User },
