@@ -189,7 +189,7 @@ function VestiarioModal({ item, onClose, onSaved }: {
                 <label className="block text-sm font-medium mb-1.5">Taglia</label>
                 <select value={form.Taglia} onChange={e => setForm({ ...form, Taglia: e.target.value })} className={field}>
                   <option value="">— Seleziona —</option>
-                  {["XS","S","M","L","XL","XXL","XXXL","Unica"].map(t => <option key={t} value={t}>{t}</option>)}
+                  {["XS","S","M","L","XL","2XL","S 36","M 38","L 40","Unica"].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
@@ -270,7 +270,7 @@ export default function VestiarioClient({ vestiario: initialVestiario }: Props) 
     return matchSearch && matchTaglia && matchAttivo
   })
 
-  const TAGLIA_ORDER = ["XS","S","M","L","XL","XXL","XXXL","Unica"]
+  const TAGLIA_ORDER = ["XS","S","M","L","XL","2XL","S 36","M 38","L 40","Unica"]
   const taglie = [...new Set(vestiario.map(v => v["Taglia"]).filter((t): t is string => !!t))]
     .sort((a, b) => TAGLIA_ORDER.indexOf(a) - TAGLIA_ORDER.indexOf(b))
 
