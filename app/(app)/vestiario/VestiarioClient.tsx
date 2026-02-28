@@ -203,8 +203,23 @@ function VestiarioModal({ item, onClose, onSaved }: {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Quantità</label>
-                <input type="number" min="0" value={form.Qta}
-                  onChange={e => setForm({ ...form, Qta: e.target.value })} className={field} />
+                <div className="flex items-center gap-0 rounded-xl border border-border overflow-hidden bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, Qta: String(Math.max(0, parseInt(form.Qta || "0") - 1)) })}
+                    className="px-3 py-2.5 text-lg font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all select-none"
+                  >−</button>
+                  <input
+                    type="number" min="0" value={form.Qta}
+                    onChange={e => setForm({ ...form, Qta: e.target.value })}
+                    className="flex-1 py-2.5 text-sm text-center focus:outline-none bg-white border-x border-border [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, Qta: String(parseInt(form.Qta || "0") + 1) })}
+                    className="px-3 py-2.5 text-lg font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all select-none"
+                  >+</button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Prezzo €</label>
@@ -242,7 +257,7 @@ function VestiarioModal({ item, onClose, onSaved }: {
   )
 }
 
-export default function VestiarioClient({ vestiario: initialVestiario }: Props) {
+export default function VestiarioClient({ vestiario: initialVestiario, userRole }: Props) {
   const [vestiario, setVestiario] = useState<Vestiario[]>(initialVestiario)
   const [search, setSearch] = useState("")
   const [filterTaglia, setFilterTaglia] = useState("")
