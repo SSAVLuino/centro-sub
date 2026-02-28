@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Loader2, X, Trash2, RefreshCw, Shield, Mail, Calendar, LogIn, Pencil } from "lucide-react"
+import { Plus, Loader2, X, Trash2, RefreshCw, Shield, Mail, Calendar, LogIn, Pencil, ShieldOff } from "lucide-react"
 
 interface Role { id: number; name: string }
 
@@ -189,7 +189,9 @@ export default function GestioneClient({ roles }: Props) {
   const [showNuovo, setShowNuovo] = useState(false)
   const [editUser, setEditUser] = useState<AppUser | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<AppUser | null>(null)
+  const [confirmRemoveRole, setConfirmRemoveRole] = useState<AppUser | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [removingRole, setRemovingRole] = useState(false)
   const [search, setSearch] = useState("")
 
   const loadUsers = useCallback(async () => {
@@ -229,6 +231,24 @@ export default function GestioneClient({ roles }: Props) {
     } catch (e) {
       alert(e instanceof Error ? e.message : "Errore nell'eliminazione")
     } finally { setDeleting(false) }
+  }
+
+  async function handleRemoveRole() {
+    if (!confirmRemoveRole) return
+    setRemovingRole(true)
+    try {
+      const res = await fetch("/api/gestione-utenti", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: confirmRemoveRole.id, removeRole: true }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setConfirmRemoveRole(null)
+      loadUsers()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Errore nella rimozione ruolo")
+    } finally { setRemovingRole(false) }
   }
 
   const filtered = users.filter(u =>
@@ -354,6 +374,12 @@ export default function GestioneClient({ roles }: Props) {
                           className="p-2 rounded-xl hover:bg-secondary transition-all text-muted-foreground hover:text-foreground" title="Modifica ruolo">
                           <Pencil className="w-4 h-4" />
                         </button>
+                        {u.role && (
+                          <button onClick={() => setConfirmRemoveRole(u)}
+                            className="p-2 rounded-xl hover:bg-amber-50 transition-all text-muted-foreground hover:text-amber-500" title="Rimuovi ruolo">
+                            <ShieldOff className="w-4 h-4" />
+                          </button>
+                        )}
                         <button onClick={() => setConfirmDelete(u)}
                           className="p-2 rounded-xl hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500" title="Elimina utente">
                           <Trash2 className="w-4 h-4" />
@@ -372,6 +398,40 @@ export default function GestioneClient({ roles }: Props) {
           </div>
         )}
       </div>
+
+      {/* Modale conferma rimozione ruolo */}
+      {confirmRemoveRole && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <ShieldOff className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Rimuovi ruolo</h3>
+                <p className="text-sm text-muted-foreground">L'utente rimarrà attivo ma senza permessi.</p>
+              </div>
+            </div>
+            <p className="text-sm">
+              Sei sicuro di voler rimuovere il ruolo{" "}
+              <span className="font-semibold">{confirmRemoveRole.role?.name}</span> da{" "}
+              <span className="font-semibold">{confirmRemoveRole.email}</span>?<br />
+              <span className="text-muted-foreground text-xs">Si comporterà come un Socio base.</span>
+            </p>
+            <div className="flex gap-3 justify-end pt-1">
+              <button onClick={() => setConfirmRemoveRole(null)}
+                className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all">
+                Annulla
+              </button>
+              <button onClick={handleRemoveRole} disabled={removingRole}
+                className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition-all disabled:opacity-60 flex items-center gap-2">
+                {removingRole && <Loader2 className="w-4 h-4 animate-spin" />}
+                {removingRole ? "Rimuovo..." : "Sì, rimuovi ruolo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modale conferma eliminazione */}
       {confirmDelete && (
