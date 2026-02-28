@@ -157,7 +157,6 @@ export async function DELETE(req: NextRequest) {
     const { error } = await admin.auth.admin.deleteUser(userId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    
     return NextResponse.json({ success: true })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Errore server" }, { status: 500 })
