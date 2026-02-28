@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { Plus, Search, Trash2, Loader2, X, Camera, Shirt } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { canAccess } from "@/lib/roles-client"
 import type { UserRole } from "@/lib/roles-client"
 import type { Vestiario } from "@/types/database"
 
@@ -254,11 +255,11 @@ export default function VestiarioClient({ vestiario: initialVestiario }: Props) 
   const supabase = createClient()
 
   async function handleDelete(id: number) {
-    if (confirmDelete !== id) { setConfirmDelete(id); return }
     setDeleting(id)
     const { error } = await supabase.from("UT_vestiario").delete().eq("id", id)
-    if (!error) { setVestiario(prev => prev.filter(v => v.id !== id)); setConfirmDelete(null) }
+    if (!error) setVestiario(prev => prev.filter(v => v.id !== id))
     setDeleting(null)
+    setConfirmDelete(null)
   }
 
   const filtered = vestiario.filter(v => {
@@ -294,11 +295,13 @@ export default function VestiarioClient({ vestiario: initialVestiario }: Props) 
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className={`grid gap-3 ${canAccess("Consiglio", userRole) ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"}`}>
         <StatCard label="Modelli"      value={stats.totale}    color="from-blue-500 to-cyan-500" />
         <StatCard label="Attivi"       value={stats.attivi}    color="from-emerald-500 to-green-500" />
         <StatCard label="Pezzi Totali" value={stats.qtaTotale} color="from-violet-500 to-purple-500" />
-        <StatCard label="Valore Stock" value={`€ ${stats.valoreTot.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="from-amber-500 to-orange-500" />
+        {canAccess("Consiglio", userRole) && (
+          <StatCard label="Valore Stock" value={`€ ${stats.valoreTot.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} color="from-amber-500 to-orange-500" />
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -371,29 +374,23 @@ export default function VestiarioClient({ vestiario: initialVestiario }: Props) 
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => { setEditItem(item); setShowModal(true) }}
-                        className="p-2 rounded-xl hover:bg-secondary transition-all text-muted-foreground hover:text-foreground" title="Modifica">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      {confirmDelete === item.id ? (
-                        <div className="flex gap-1">
-                          <button onClick={() => handleDelete(item.id)} disabled={deleting === item.id}
-                            className="px-2 py-1 text-xs rounded-lg bg-red-100 text-red-700 hover:bg-red-200 font-medium transition-all disabled:opacity-50 flex items-center gap-1">
-                            {deleting === item.id && <Loader2 className="w-3 h-3 animate-spin" />} Elimina
-                          </button>
-                          <button onClick={() => setConfirmDelete(null)}
-                            className="px-2 py-1 text-xs rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium transition-all">
-                            Annulla
-                          </button>
-                        </div>
-                      ) : (
-                        <button onClick={() => handleDelete(item.id)}
+                      {canAccess("Consiglio", userRole) && (
+                        <button onClick={() => { setEditItem(item); setShowModal(true) }}
+                          className="p-2 rounded-xl hover:bg-secondary transition-all text-muted-foreground hover:text-foreground" title="Modifica">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                      )}
+                      {canAccess("Admin", userRole) && (
+                        <button onClick={() => setConfirmDelete(item.id)}
                           className="p-2 rounded-xl hover:bg-red-50 transition-all text-muted-foreground hover:text-red-500" title="Elimina">
                           <Trash2 className="w-4 h-4" />
                         </button>
+                      )}
+                      {!canAccess("Consiglio", userRole) && (
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </div>
                   </td>
@@ -409,6 +406,46 @@ export default function VestiarioClient({ vestiario: initialVestiario }: Props) 
         )}
       </div>
 
+      {/* Modale conferma eliminazione */}
+      {confirmDelete !== null && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Elimina capo</h3>
+                <p className="text-sm text-muted-foreground">Questa azione è irreversibile.</p>
+              </div>
+            </div>
+            <p className="text-sm">
+              Sei sicuro di voler eliminare{" "}
+              <span className="font-semibold">
+                {vestiario.find(v => v.id === confirmDelete)?.["Descrizione"] ?? "questo capo"}
+              </span>?
+            </p>
+            <div className="flex gap-3 justify-end pt-1">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-all"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                disabled={deleting === confirmDelete}
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all disabled:opacity-60 flex items-center gap-2"
+              >
+                {deleting === confirmDelete && <Loader2 className="w-4 h-4 animate-spin" />}
+                {deleting === confirmDelete ? "Elimino..." : "Sì, elimina"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale modifica/nuovo */}
       {showModal && (
         <VestiarioModal
           item={editItem}
