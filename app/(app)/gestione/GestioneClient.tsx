@@ -64,7 +64,7 @@ function NuovoUtenteModal({ roles, onClose, onCreated }: {
     }
     setSaving(true); setError(null)
     try {
-      const res = await fetch("/api/admin/users", {
+      const res = await fetch("/api/gestione-utenti", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email, password: form.password, roleId: parseInt(form.roleId) }),
@@ -137,7 +137,7 @@ function ModificaRuoloModal({ user, roles, onClose, onSaved }: {
   async function handleSave() {
     setSaving(true); setError(null)
     try {
-      const res = await fetch("/api/admin/users", {
+      const res = await fetch("/api/gestione-utenti", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, roleId: parseInt(roleId) }),
@@ -195,7 +195,7 @@ export default function GestioneClient({ roles }: Props) {
   const loadUsers = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch("/api/admin/users")
+      const res = await fetch("/api/gestione-utenti")
       const text = await res.text()
       let json: any
       try {
@@ -217,7 +217,7 @@ export default function GestioneClient({ roles }: Props) {
     if (!confirmDelete) return
     setDeleting(true)
     try {
-      const res = await fetch("/api/admin/users", {
+      const res = await fetch("/api/gestione-utenti", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: confirmDelete.id }),
