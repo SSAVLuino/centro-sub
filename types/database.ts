@@ -150,6 +150,19 @@ export type Noleggio = {
   BP_soci?: Pick<Socio, "id" | "Nome" | "Cognome">
 }
 
+export type Vestiario = {
+  id: number
+  created_at: string
+  "Descrizione": string
+  "Qta": number | null
+  "Taglia": string | null
+  "Colore": string | null
+  "Foto": string | null
+  "Note": string | null
+  "Prezzo": number | null
+  "Attivo": boolean | null
+}
+
 export type NoleggioDettaglio = {
   id: number
   created_at: string
